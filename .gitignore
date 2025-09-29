@@ -1,0 +1,15 @@
+.gitattributes
+# Krippe / Node
+node_modules/
+dist/
+tmp/
+.env
+.env.*
+# Laufzeitdaten
+data/
+logs/
+*.sqlite
+backups/
+# System
+.DS_Store
+Thumbs.db
