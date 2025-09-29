@@ -1,0 +1,1 @@
+# Siehe Reinstallationsskript für sichere Updates.
