@@ -8,7 +8,7 @@ PROJECT_DIR="/home/singer/led-sound-bachlauf"
 SCRIPT="$PROJECT_DIR/tests/led_test_alt_grb.cjs"
 
 # ===== Standard-Parameter =====
-COUNT=${COUNT:-500}          # LEDs
+COUNT=${COUNT:-1000}          # LEDs
 BRIGHTNESS=${BRIGHTNESS:-255}
 GPIO=${GPIO:-12}
 

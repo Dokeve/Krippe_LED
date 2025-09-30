@@ -1,24 +1,21 @@
-export default {
-  httpPort: process.env.PORT || 3000,
-  staticDir: 'public',
-  dataDir: 'data',
-  dbFile: 'data/app.sqlite',
-  led: {
-    totalLeds: 900,
-    gpioPin: 18,
-    brightness: 128,
-    stripType: 'ws2812',
-    dma: 10,
-  },
-  flow: {
-    enabled: true,
-    pin: 23
-  },
-  audio: {
-    enabled: true,
-    dir: 'public/audio'
-  },
-  security: {
-    updateToken: process.env.UPDATE_TOKEN || null
-  }
+// config.js
+export const CYCLE_SECONDS = {
+  total: 300,
+  day: 100,
+  dayNight: 50,
+  night: 100,
+  nightDay: 50
+};
+
+export const AUDIO_PATHS = {
+  speech: '/home/singer/led-sound-bachlauf/audio/krippe/Audioprachdateien',
+  bgm: '/home/singer/led-sound-bachlauf/audio/krippe/Hintergrundmusik'
+};
+
+// Standard-GPIOs (werden von DB settings ggf. überschrieben)
+export const GPIO_DEFAULTS = {
+  ws2812Primary: 18,
+  ws2812Alt: 12,
+  pump: 19,
+  audioButton: 13
 };

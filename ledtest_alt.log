@@ -1,0 +1,61 @@
+2025-09-30T14:14:52.750Z [LIB] verwendet: alt (rpi-ws281x)
+2025-09-30T14:14:52.790Z == ALT-GRB-LED-Test ==
+2025-09-30T14:14:52.791Z Host=raspberrypi  LEDs=1000  GPIO=12  Brightness=255  Strip=grb  Wait=Enter
+2025-09-30T14:14:52.792Z Logfile=/home/singer/led-sound-bachlauf/ledtest_alt.log
+2025-09-30T14:14:52.798Z [INIT] count=1000 gpio=12 brightness=255 (lib=alt, strip=grb)
+2025-09-30T14:14:52.800Z [TEST] RGB-Blöcke (4 Segmente)
+2025-09-30T14:14:52.812Z ⏸  RGB-Blöcke (4): Drücke [Enter], um fortzufahren ...
+2025-09-30T14:15:58.906Z [TEST] Vollweiß
+2025-09-30T14:15:58.907Z ⏸  Vollweiß: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:18:31.579Z [TEST] Gap-Lauflicht – Gap=5, Runden=4
+2025-09-30T14:21:14.366Z ⏸  Gap-Lauflicht: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:22:01.125Z [TEST] RGB-Blöcke à 10 LEDs (R,G,B,repeat)
+2025-09-30T14:22:01.131Z ⏸  RGB-Blöcke à 10: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:22:24.276Z [TEST] Segment-Lauflicht – Segment=5, Farben=3, Loops=4
+2025-09-30T14:24:48.302Z [SIGNAL] SIGINT
+2025-09-30T14:24:48.304Z [CLEANUP] skip reset() für ALT (SIGINT) – Prozess endet sauber
+2025-09-30T14:24:48.307Z [EXIT] code=0
+2025-09-30T14:24:52.508Z [LIB] verwendet: alt (rpi-ws281x)
+2025-09-30T14:24:52.548Z == ALT-GRB-LED-Test ==
+2025-09-30T14:24:52.549Z Host=raspberrypi  LEDs=1000  GPIO=12  Brightness=255  Strip=grb  Wait=Enter
+2025-09-30T14:24:52.550Z Logfile=/home/singer/led-sound-bachlauf/ledtest_alt.log
+2025-09-30T14:24:52.556Z [INIT] count=1000 gpio=12 brightness=255 (lib=alt, strip=grb)
+2025-09-30T14:24:52.557Z [TEST] RGB-Blöcke (4 Segmente)
+2025-09-30T14:24:52.562Z ⏸  RGB-Blöcke (4): Drücke [Enter], um fortzufahren ...
+2025-09-30T14:27:00.730Z [TEST] Vollweiß
+2025-09-30T14:27:00.732Z ⏸  Vollweiß: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:28:50.921Z [TEST] Gap-Lauflicht – Gap=5, Runden=4
+2025-09-30T14:28:57.645Z [SIGNAL] SIGINT
+2025-09-30T14:28:57.648Z [CLEANUP] skip reset() für ALT (SIGINT) – Prozess endet sauber
+2025-09-30T14:28:57.649Z [EXIT] code=0
+2025-09-30T14:29:04.657Z [LIB] verwendet: alt (rpi-ws281x)
+2025-09-30T14:29:04.697Z == ALT-GRB-LED-Test ==
+2025-09-30T14:29:04.698Z Host=raspberrypi  LEDs=1000  GPIO=12  Brightness=255  Strip=grb  Wait=Enter
+2025-09-30T14:29:04.699Z Logfile=/home/singer/led-sound-bachlauf/ledtest_alt.log
+2025-09-30T14:29:04.704Z [INIT] count=1000 gpio=12 brightness=255 (lib=alt, strip=grb)
+2025-09-30T14:29:04.706Z [TEST] RGB-Blöcke (4 Segmente)
+2025-09-30T14:29:04.711Z ⏸  RGB-Blöcke (4): Drücke [Enter], um fortzufahren ...
+2025-09-30T14:30:09.324Z [TEST] Vollweiß
+2025-09-30T14:30:09.326Z ⏸  Vollweiß: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:34:28.862Z [TEST] Gap-Lauflicht – Gap=5, Runden=4
+2025-09-30T14:37:11.340Z ⏸  Gap-Lauflicht: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:37:32.337Z [SIGNAL] SIGINT
+2025-09-30T14:37:32.340Z [CLEANUP] skip reset() für ALT (SIGINT) – Prozess endet sauber
+2025-09-30T14:37:32.343Z [EXIT] code=0
+2025-09-30T14:45:53.131Z [LIB] verwendet: alt (rpi-ws281x)
+2025-09-30T14:45:53.172Z == ALT-GRB-LED-Test ==
+2025-09-30T14:45:53.174Z Host=raspberrypi  LEDs=1000  GPIO=12  Brightness=255  Strip=grb  Wait=Enter
+2025-09-30T14:45:53.174Z Logfile=/home/singer/led-sound-bachlauf/ledtest_alt.log
+2025-09-30T14:45:53.180Z [INIT] count=1000 gpio=12 brightness=255 (lib=alt, strip=grb)
+2025-09-30T14:45:53.182Z [TEST] RGB-Blöcke (4 Segmente)
+2025-09-30T14:45:53.187Z ⏸  RGB-Blöcke (4): Drücke [Enter], um fortzufahren ...
+2025-09-30T14:46:05.290Z [TEST] Vollweiß
+2025-09-30T14:46:05.291Z ⏸  Vollweiß: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:46:28.280Z [TEST] Gap-Lauflicht – Gap=5, Runden=4
+2025-09-30T14:49:10.912Z ⏸  Gap-Lauflicht: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:49:18.668Z [TEST] RGB-Blöcke à 10 LEDs (R,G,B,repeat)
+2025-09-30T14:49:18.676Z ⏸  RGB-Blöcke à 10: Drücke [Enter], um fortzufahren ...
+2025-09-30T14:49:28.393Z [TEST] Segment-Lauflicht – Segment=5, Farben=3, Loops=4
+2025-09-30T14:57:38.412Z ⏸  Segment-Lauflicht (5er Block): Drücke [Enter], um fortzufahren ...
+2025-09-30T14:58:45.581Z [TEST] Mehrfarben-Lauflicht – 5 LEDs mit Abstand=5
+2025-09-30T14:59:26.830Z ⏸  Mehrfarben-Lauflicht (5 LEDs mit Abstand): Drücke [Enter], um fortzufahren ...
