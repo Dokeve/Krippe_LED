@@ -13,3 +13,4 @@ logs/
 .env.*
 backups/
 _tmp_*
+*.log
