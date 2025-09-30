@@ -59,3 +59,6 @@
 2025-09-30T14:57:38.412Z ⏸  Segment-Lauflicht (5er Block): Drücke [Enter], um fortzufahren ...
 2025-09-30T14:58:45.581Z [TEST] Mehrfarben-Lauflicht – 5 LEDs mit Abstand=5
 2025-09-30T14:59:26.830Z ⏸  Mehrfarben-Lauflicht (5 LEDs mit Abstand): Drücke [Enter], um fortzufahren ...
+2025-09-30T15:09:18.883Z == Ende ==
+2025-09-30T15:09:18.884Z [CLEANUP] skip reset() für ALT (normal-end) – Prozess endet sauber
+2025-09-30T15:09:18.887Z [EXIT] code=0
