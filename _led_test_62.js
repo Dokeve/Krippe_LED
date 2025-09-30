@@ -1,13 +1,14 @@
 /**
- * _led_test_62.cjs
+ * _led_test_62.js
  * Testet 62 LEDs: Farben in 10er Blöcken Rot -> Grün -> Blau -> Gelb, wiederholt sich.
- * CommonJS (require), damit es unabhängig von "type": "module" läuft.
+ * Nutzt bevorzugt 'rpi-ws281x-native', fällt zurück auf 'rpi-ws281x'.
  */
 const LED_COUNT = 62;
 const GPIO_PIN = 18;
 const BRIGHTNESS = 64;
 
 function toGRB(hex) {
+  // Module erwarten i.d.R. GRB (prüfen wir nicht dynamisch; reicht für Test)
   const r = (hex >> 16) & 0xff;
   const g = (hex >> 8) & 0xff;
   const b = hex & 0xff;
@@ -24,7 +25,12 @@ try {
   mode = 'alt';
 }
 
-const COLORS = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00].map(toGRB);
+const COLORS = [
+  0xff0000, // Rot
+  0x00ff00, // Grün
+  0x0000ff, // Blau
+  0xffff00, // Gelb
+].map(toGRB);
 
 if (mode === 'native') {
   ws.init(LED_COUNT, { gpioPin: GPIO_PIN, brightness: BRIGHTNESS });
@@ -34,8 +40,9 @@ if (mode === 'native') {
 
 const arr = new Uint32Array(LED_COUNT);
 for (let i = 0; i < LED_COUNT; i++) {
-  const block = Math.floor(i / 10);
-  arr[i] = COLORS[block % COLORS.length];
+  const block = Math.floor(i / 10);        // 10er-Schritte
+  const colorIdx = block % COLORS.length;  // zyklisch RGBy
+  arr[i] = COLORS[colorIdx];
 }
 
 ws.render(arr);

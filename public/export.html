@@ -1,1 +1,57 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><link rel='stylesheet' href='styles.css'></head><body><h1>Export & Update</h1><a href='/api/export' target='_blank'><button>Export JSON</button></a><div><input type='file' id='zipfile' accept='.zip'><button id='upload'>Hochladen</button><div id='msg'></div></div><script src='js/export.js'></script></body></html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Export — LED Sound Bachlauf</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="js/export.js"></script>
+</head>
+<body>
+  <main id="main" role="main">
+    <nav class="top-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Start</a>
+      <a href="audio.html">Audio</a>
+      <a href="led-groups.html">LED</a>
+      <a href="calendar.html">Kalender</a>
+      <a href="star.html">Sternsteuerung</a>
+      <a href="export.html" aria-current="page">Export</a>
+    </nav>
+
+    <section>
+      <h2>Export</h2>
+      <p>Exportiert die aktuellen Konfigurationen (Kalender, Audio, LED-Gruppen) als JSON-Dateien.</p>
+      <div class="button-group">
+        <button id="export-all">Export starten</button>
+      </div>
+      <div id="export-links" class="row"></div>
+    </section>
+
+    <section>
+      <h2>Import (Upload & Anwenden)</h2>
+      <p>Wähle eine oder mehrere JSON-Dateien aus. Unterstützt werden <code>calendar.json</code>, <code>audio.json</code> und <code>led-groups.json</code>.</p>
+      <div class="row">
+        <input type="file" id="import-files" accept=".json,application/json" multiple>
+        <button id="import-apply">⤴ Import anwenden</button>
+      </div>
+      <details style="margin-top:8px;">
+        <summary>Hinweise</summary>
+        <ul>
+          <li>Die Dateien müssen im JSON-Format vorliegen.</li>
+          <li><code>calendar.json</code> erwartet ein Array von Terminen.</li>
+          <li><code>audio.json</code> und <code>led-groups.json</code> erwarten Objekte.</li>
+        </ul>
+      </details>
+      <section class="card" style="margin-top:10px;">
+        <h3>Import-Status</h3>
+        <pre id="import-log" aria-live="polite">Bereit</pre>
+      </section>
+    </section>
+
+    <section>
+      <h2>Log</h2>
+      <pre id="log-output">Keine Fehler</pre>
+    </section>
+  </main>
+  <footer><small>Letzte Änderung: 02.09.2025 13:45 Uhr</small></footer>
+</body>
+</html>

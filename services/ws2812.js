@@ -1,70 +1,45 @@
-import config from '../config.js';
-import { getDB } from './db.js';
-import { Log } from './log.js';
-import ws281x from 'rpi-ws281x';
+// services/ws2812.js
+// WS2812 über rpi-ws281x, GPIO12 (Pin 32), GND Pin 14 – Hardware bevorzugt
+let ws = null;
+try { const mod = await import("rpi-ws281x"); ws = mod?.default || mod; } catch { ws = null; }
 
-let pixels = null;
-let inited = false;
+let active = false, numLEDs = 0, pixelData = null;
+const gpioPin = 12;   // GPIO12 (Pin 32)
+let brightness = 128; // 0..255
 
-function toRGB(hex) {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex || 'ffffff');
-  const intVal = parseInt(m ? m[1] : 'ffffff', 16);
-  return { r: (intVal >> 16) & 255, g: (intVal >> 8) & 255, b: intVal & 255 };
-}
-function pack({ r, g, b }) {
-  return ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+function hexToGRB(hex){
+  const v = parseInt((hex || "#000000").slice(1), 16) >>> 0;
+  const r = (v >> 16) & 0xff, g = (v >> 8) & 0xff, b = v & 0xff;
+  return (g << 16) | (r << 8) | b; // WS281x erwartet GRB
 }
 
-export function init() {
-  if (inited) return;
-  const numLeds = Number(config.led.totalLeds);
-  pixels = new Uint32Array(numLeds);
-
-  ws281x.configure({
-    leds: numLeds,
-    gpio: config.led.gpioPin,
-    brightness: config.led.brightness,
-    dma: config.led.dma,
-    stripType: 'grb',
-  });
-
-  clearAll();
-  inited = true;
-  Log.success(`WS2812 initialisiert: ${numLeds} LEDs @ GPIO ${config.led.gpioPin}`);
+export async function initLEDs(count = 1000){
+  if (!ws) { console.log("[WS2812] rpi-ws281x nicht verfügbar – Simulation aktiv."); return; }
+  numLEDs = count; pixelData = new Uint32Array(numLEDs);
+  try { ws.init(numLEDs, { gpioPin, brightness }); }
+  catch (e) { console.warn("[WS2812] Init-Optionen fehlgeschlagen:", e?.message || e); ws.init(numLEDs); try { ws.setBrightness?.(brightness); } catch {} }
+  active = true;
+  console.log(`[WS2812] Init: ${numLEDs} LEDs @ GPIO ${gpioPin} (Brightness ${brightness})`);
 }
 
-export function clearAll() {
-  if (!pixels) return;
-  pixels.fill(0);
-  ws281x.render(pixels);
+export function setPixel(i, hex) {
+  if (!ws || !active || !pixelData) return;
+  if (i < 0 || i >= numLEDs) return;
+  pixelData[i] = hexToGRB(hex);
 }
-
-export function setAll(hex) {
-  if (!inited) init();
-  const val = pack(toRGB(hex));
-  pixels.fill(val);
-  ws281x.render(pixels);
-  Log.info(`Alle LEDs -> ${hex}`);
+export function fillRange(a, b, hex){
+  if (!ws || !active || !pixelData) return;
+  const s = Math.max(0, Math.min(a, b));
+  const e = Math.min(numLEDs - 1, Math.max(a, b));
+  const v = hexToGRB(hex);
+  for (let i = s; i <= e; i++) pixelData[i] = v;
 }
-
-export function off() {
-  if (!inited) init();
-  clearAll();
-  ws281x.render(pixels);
-  Log.info('LEDs aus');
+export function render(){
+  if (!ws || !active || !pixelData) return;
+  try { ws.render(pixelData); } catch (e) { console.error("[WS2812] render-Fehler:", e); }
 }
-
-export function setGroup(name, hex) {
-  if (!inited) init();
-  const db = getDB();
-  const row = db.prepare('SELECT * FROM led_groups WHERE name = ?').get(name);
-  if (!row) throw new Error('Gruppe nicht gefunden: ' + name);
-  const val = pack(toRGB(hex));
-  for (let i = 0; i < row.length; i++) {
-    const idx = row.start_index + i;
-    if (idx >= 0 && idx < pixels.length) pixels[idx] = val;
-  }
-  ws281x.render(pixels);
-  db.prepare('UPDATE led_groups SET color = ? WHERE id = ?').run(hex, row.id);
-  Log.info(`Gruppe "${name}" -> ${hex}`);
+export async function shutdownLEDs(){
+  if (!ws || !active) return;
+  try { pixelData?.fill(0); try { ws.render(pixelData); } catch {} ws.reset?.(); }
+  finally { active = false; console.log("[WS2812] Freigegeben."); }
 }

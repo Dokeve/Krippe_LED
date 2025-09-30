@@ -1,36 +1,41 @@
-import { getDB } from './db.js';
-import { Log } from './log.js';
-import * as Scn from './scenarios.js';
+// services/scheduler.js
+// Einfache Modul-Logik über Kalender:
+// - „Modul 1“ im aktuellen Eventtitel -> alles an (Hook)
+// - „Modul 2“ -> Szenarien + Audio (Hook)
+import { query } from "./db.js";
+import { initLEDs } from "./ws2812.js";
 
 let timer = null;
-let lastApplied = null;
 
-function findActiveModule(ts) {
-  const db = getDB();
-  const rows = db.prepare('SELECT * FROM calendar WHERE start_ts <= ? AND end_ts >= ?').all(ts, ts);
-  if (rows.length === 0) return null;
-  rows.sort((a,b)=> a.start_ts - b.start_ts || a.end_ts - b.end_ts);
-  let pick = rows[0];
-  for (const r of rows) {
-    if (r.created_at >= pick.created_at) pick = r;
+async function tick(){
+  try{
+    const now = new Date().toISOString();
+    const rows = await query(
+      "SELECT * FROM calendar_event WHERE start<=:now AND (`end` IS NULL OR `end`>:now) ORDER BY start DESC LIMIT 1",
+      { now }
+    );
+    const cur = rows[0];
+    if (!cur) return;
+
+    const title = String(cur.title || "").toLowerCase();
+    if (title.includes("modul 1")) {
+      await initLEDs(1000);
+      // TODO: „alles an“ – Farben/Gruppen aus DB ziehen und anwenden
+    }
+    if (title.includes("modul 2")) {
+      await initLEDs(1000);
+      // TODO: Szenarien fahren + passende Audiofiles abspielen
+    }
+  } catch (e) {
+    console.error("[scheduler] tick error:", e?.message || e);
   }
-  return pick.module;
 }
 
-export function start(io) {
-  if (timer) clearInterval(timer);
-  timer = setInterval(async () => {
-    const now = Math.floor(Date.now()/1000);
-    const active = findActiveModule(now);
-    if (active && active !== lastApplied) {
-      try {
-        await Scn.applyModule(active);
-        lastApplied = active;
-        io.emit('schedule', { activeModule: active, ts: now });
-      } catch (e) {
-        Log.error('Fehler beim Anwenden des Moduls: ' + e.message);
-      }
-    }
-  }, 3000);
-  Log.success('Scheduler gestartet (alle 3s)');
+export async function startScheduler(){
+  if (timer) return;
+  timer = setInterval(tick, 5000);
+  console.log("[scheduler] gestartet");
+}
+export async function stopScheduler(){
+  if (timer) { clearInterval(timer); timer = null; console.log("[scheduler] gestoppt"); }
 }

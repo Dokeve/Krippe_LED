@@ -1,20 +1,93 @@
-const ioClient = io();
-const logs = document.getElementById('logs');
-function addLog({level,msg,ts}){
-  const line = document.createElement('div');
-  const d = ts? new Date(ts).toLocaleString(): new Date().toLocaleString();
-  line.textContent = `[${d}] [${level}] ${msg}`;
-  logs.appendChild(line); logs.scrollTop = logs.scrollHeight;
-}
-ioClient.on('log', addLog);
-ioClient.on('schedule', p => addLog({level:'info', msg:'Scheduler: Modul '+p.activeModule, ts: p.ts*1000}));
-document.getElementById('btnOn').onclick = async ()=>{
-  const color = document.getElementById('color').value;
-  await fetch('/api/led/on',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ color })});
-};
-document.getElementById('btnOff').onclick = async ()=>{ await fetch('/api/led/off',{method:'POST'}); };
-document.getElementById('flowOn').onclick = ()=> fetch('/api/flow',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ on:true })});
-document.getElementById('flowOff').onclick = ()=> fetch('/api/flow',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ on:false })});
-document.querySelectorAll('[data-module]').forEach(btn=>{
-  btn.onclick = ()=> fetch('/api/module',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ module: Number(btn.dataset.module) })});
+// public/js/index.js
+// Letzte Änderung: 02.09.2025 10:35 Uhr (Lokale Zeiten im Startseiten-Kalender)
+document.addEventListener('DOMContentLoaded', () => {
+  const logEl = document.getElementById('log-output');
+  function log(m) {
+    const ts = new Date().toLocaleString();
+    if (logEl) { logEl.textContent += `[${ts}] ${m}\n`; logEl.scrollTop = logEl.scrollHeight; }
+    console.log(m);
+  }
+
+  const modeDisp = document.getElementById('current-mode-value');
+
+  async function fetchMode() {
+    try {
+      const r = await fetch('/api/mode', { cache: 'no-store' });
+      const j = await r.json();
+      if (modeDisp) modeDisp.textContent = j.mode || 'auto';
+    } catch (e) { log('Modus konnte nicht geladen werden: ' + e.message); }
+  }
+  fetchMode();
+
+  async function setMode(mode){
+    try{
+      const r = await fetch('/api/mode', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({mode}) });
+      const j = await r.json();
+      if (modeDisp) modeDisp.textContent = j.mode;
+      log('Modus gesetzt: ' + j.mode);
+    }catch(e){ log('Modus-Setzen fehlgeschlagen: ' + e.message); }
+  }
+  document.getElementById('led-on')?.addEventListener('click',()=>setMode('on'));
+  document.getElementById('led-off')?.addEventListener('click',()=>setMode('off'));
+  document.getElementById('led-auto')?.addEventListener('click',()=>setMode('auto'));
+
+  // --- Helpers: Eingehende start/end robust lokal darstellen ---
+  // Normalisiert:
+  //  - "2025-12-24T18:00Z" (UTC)  -> "2025-12-24T19:00" (Beispiel: CET) als lokale, Z-lose ISO
+  //  - "2025-12-24T18:00+02:00"   -> lokale, Z-lose ISO
+  //  - "2025-12-24T18:00"         -> bleibt unverändert
+  function toLocalNaiveISO(s) {
+    if (!s) return s;
+    // Wenn bereits naive lokale Form (kein Z/Offset) -> zurückgeben
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(s)) return s;
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    const pad = (n)=>String(n).padStart(2,'0');
+    const yyyy = d.getFullYear();
+    const mm = pad(d.getMonth()+1);
+    const dd = pad(d.getDate());
+    const HH = pad(d.getHours());
+    const MM = pad(d.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${HH}:${MM}`;
+  }
+
+  // Kalender – Wochenansicht auf der Startseite
+  const calEl = document.getElementById('calendar');
+  function renderCalendar() {
+    if (!calEl || !window.FullCalendar) { log('[SIMULATION] FullCalendar nicht verfügbar'); return; }
+    const cal = new FullCalendar.Calendar(calEl, {
+      initialView:'timeGridWeek',
+      locale:'de',
+      headerToolbar:{ left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,timeGridDay' },
+      slotMinTime: "00:00:00",
+      slotMaxTime: "24:00:00",
+      eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false },
+      events: async (_info,success,failure)=>{
+        try{
+          const r = await fetch('/api/calendar', { cache:'no-store' }); 
+          const arr = await r.json();
+          const mapped = (arr||[]).map((ev,i)=>({
+            id: ev.id || String(i),
+            title: ev.title || ('Modul ' + (ev.module || '1')),
+            start: toLocalNaiveISO(ev.start),
+            end: ev.end ? toLocalNaiveISO(ev.end) : null,
+            allDay: ev.allDay !== false,
+            color: (ev.module === '1' ? 'gold' : 'royalblue')
+          }));
+          success(mapped);
+          document.getElementById('calendar-status')?.replaceChildren(document.createTextNode('OK'));
+        }catch(e){
+          failure(e);
+          log('Kalender konnte nicht geladen werden: ' + e.message);
+          document.getElementById('calendar-status')?.replaceChildren(document.createTextNode('Fehler'));
+        }
+      }
+    });
+    cal.render();
+  }
+
+  // Wenn Fallback JS dynamisch nachgeladen wird, warten bis es verfügbar ist
+  if (typeof FullCalendar === 'undefined') {
+    const chk = setInterval(()=>{ if (typeof FullCalendar !== 'undefined'){ clearInterval(chk); renderCalendar(); }}, 100);
+  } else { renderCalendar(); }
 });
