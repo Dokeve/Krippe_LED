@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LED-Gruppenverwaltung — LED Sound Bachlauf</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script defer src="js/led-groups.js"></script>
+</head>
+<body>
+  <main id="main" role="main">
+    <nav class="top-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Start</a>
+      <a href="audio.html">Audio</a>
+      <a href="led-groups.html" aria-current="page">LED</a>
+      <a href="calendar.html">Kalender</a>
+      <a href="star.html">Sternsteuerung</a>
+      <a href="export.html">Export</a>
+    </nav>
+
+    <!-- Template für Untergruppen -->
+    <template id="subgroup-template">
+      <article class="subgroup" data-template="true">
+        <div class="subgroup-header">
+          <label>Bezeichnung: <input type="text" class="sub-name" placeholder="z. B. Turm → Krippe" /></label>
+          <label>LED von: <input type="number" class="sub-led-from" min="0" /></label>
+          <label>LED bis: <input type="number" class="sub-led-to" min="0" /></label>
+          <label>LED Anzahl: <input type="number" class="sub-led-count" min="1" /></label>
+          <label>Wandbeleuchtung: <input type="checkbox" class="sub-wall" /></label>
+          <label>Grundfarbe Tag: <input type="color" class="sub-color-day" value="#000000" /></label>
+          <label>Grundfarbe Nacht: <input type="color" class="sub-color-night" value="#000000" /></label>
+          <div class="sub-actions">
+            <button type="button" class="toggle-details">Details</button>
+            <button type="button" class="save-subgroup">💾 Speichern</button>
+            <button type="button" class="delete-subgroup">🗑 Löschen</button>
+          </div>
+        </div>
+
+        <details class="sub-details">
+          <summary>Zeitszenarios (Sekunden im Szenario) + LED-Auswahl</summary>
+          <div class="scenarios-list"></div>
+          <div class="scenarios-controls">
+            <button type="button" class="add-scenario-row">➕ Szenario hinzufügen</button>
+          </div>
+
+          <!-- Ergänzung: Individuelle LED-Farben (nur Quadrate) -->
+          <details class="card" open>
+            <summary>Individuelle LED-Farben (optional)</summary>
+            <div class="row" style="margin-bottom:8px;">
+              <button type="button" class="gen-individual-colors">⚙ Farbfelder gemäß „LED Anzahl“ erzeugen</button>
+              <span style="opacity:.8;margin-left:8px;">Wird nur ausgewertet, wenn befüllt. Leere Felder ⇒ Basisfarbe/Regelwerk.</span>
+            </div>
+
+            <!-- reine Farbfeld-Quadrate; keine Text-Hexfelder -->
+            <div class="led-color-palette" aria-live="polite"></div>
+
+            <h3 style="margin-top:12px;">Gespeicherte Farben</h3>
+            <table class="table saved-colors">
+              <thead><tr><th>#</th><th>Farbe</th><th>HEX</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </details>
+        </details>
+      </article>
+    </template>
+
+    <section class="group-section" id="group-advent">
+      <h2>Advent
+        <label class="inline-label"><input type="checkbox" id="group-advent-active"> Aktiv</label>
+      </h2>
+      <div id="advent-subgroups" class="subgroup-container"></div>
+      <div class="group-controls">
+        <button id="add-advent-subgroup" type="button">➕ Untergruppe hinzufügen</button>
+        <button id="save-advent-group" type="button">💾 Gruppe speichern</button>
+      </div>
+    </section>
+
+    <section class="group-section" id="group-weihnacht">
+      <h2>Weihnachtszeit
+        <label class="inline-label"><input type="checkbox" id="group-weihnacht-active"> Aktiv</label>
+      </h2>
+      <div id="weihnacht-subgroups" class="subgroup-container"></div>
+      <div class="group-controls">
+        <button id="add-weihnacht-subgroup" type="button">➕ Untergruppe hinzufügen</button>
+        <button id="save-weihnacht-group" type="button">💾 Gruppe speichern</button>
+      </div>
+    </section>
+
+    <section class="group-section" id="group-lagerfeuer">
+      <h2>Lagerfeuer</h2>
+      <div id="lagerfeuer-settings" class="lagerfeuer-settings">
+        <div class="row">
+          <label>LED von <input type="number" id="lagerfeuer-led-from" min="0" value="0" /></label>
+          <label>LED bis <input type="number" id="lagerfeuer-led-to" min="0" value="0" /></label>
+          <label>LED Anzahl <input type="number" id="lagerfeuer-led-count" min="0" value="0" /></label>
+        </div>
+        <div class="row">
+          <label>Farbe 1 <input type="color" id="lagerfeuer-color1" value="#ff4500" /></label>
+          <label>Farbe 2 <input type="color" id="lagerfeuer-color2" value="#ff8c00" /></label>
+          <label>Farbe 3 <input type="color" id="lagerfeuer-color3" value="#ffd700" /></label>
+          <label>Farbe 4 <input type="color" id="lagerfeuer-color4" value="#ff6347" /></label>
+          <label>Farbe 5 <input type="color" id="lagerfeuer-color5" value="#ffffff" /></label>
+        </div>
+        <div class="scenarios-controls">
+          <button type="button" id="add-lagerfeuer-scenario">➕ Szenario hinzufügen</button>
+        </div>
+        <div id="lagerfeuer-scenarios" class="scenarios-list"></div>
+        <div class="group-controls">
+          <button id="save-lagerfeuer" type="button">💾 Speichern</button>
+          <button id="test-lagerfeuer" type="button">▶ Testen (Simulation)</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Systemprotokoll</h2>
+      <pre id="log-output" aria-live="polite">Keine Fehler</pre>
+    </section>
+  </main>
+  <footer><small>Letzte Änderung: 02.09.2025 08:00 Uhr (wiederhergestellt + Quadrate)</small></footer>
+</body>
+</html>

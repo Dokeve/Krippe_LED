@@ -1,0 +1,14 @@
+# Node / Build
+node_modules/
+dist/
+tmp/
+
+# Laufzeitdaten
+data/
+logs/
+*.sqlite
+
+# Secrets
+.env
+.env.*
+backups/

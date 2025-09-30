@@ -1,0 +1,97 @@
+-- schema.sql
+CREATE TABLE IF NOT EXISTS star_config (
+  id TINYINT PRIMARY KEY,
+  enabled TINYINT(1) NOT NULL DEFAULT 0,
+  distance_cm INT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  daily_start TIME NOT NULL,
+  daily_end TIME NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS audio_settings (
+  id TINYINT PRIMARY KEY,
+  volume_speech INT NOT NULL DEFAULT 100,
+  volume_bg INT NOT NULL DEFAULT 100
+);
+
+CREATE TABLE IF NOT EXISTS audio_bg_map (
+  scenario VARCHAR(32) PRIMARY KEY,
+  file_path TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS audio_speeches (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  label VARCHAR(255) NOT NULL,
+  file_path TEXT NOT NULL,
+  from_datetime DATETIME NOT NULL,
+  to_datetime DATETIME NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS led_group (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  group_key VARCHAR(32) UNIQUE NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS led_subgroup (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  group_id INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  led_from INT NOT NULL,
+  led_to INT NOT NULL,
+  led_count INT NOT NULL,
+  wall TINYINT(1) NOT NULL DEFAULT 0,
+  color_day CHAR(7) NOT NULL DEFAULT '#000000',
+  color_night CHAR(7) NOT NULL DEFAULT '#000000',
+  FOREIGN KEY (group_id) REFERENCES led_group(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS led_scenario (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  subgroup_id INT NOT NULL,
+  seconds INT NOT NULL,
+  led_selection JSON NULL,
+  FOREIGN KEY (subgroup_id) REFERENCES led_subgroup(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS led_individual_color (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  subgroup_id INT NOT NULL,
+  idx INT NOT NULL,
+  hex CHAR(7) NOT NULL,
+  FOREIGN KEY (subgroup_id) REFERENCES led_subgroup(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS lagerfeuer_config (
+  id TINYINT PRIMARY KEY,
+  led_from INT NOT NULL,
+  led_to INT NOT NULL,
+  led_count INT NOT NULL,
+  color1 CHAR(7) NOT NULL,
+  color2 CHAR(7) NOT NULL,
+  color3 CHAR(7) NOT NULL,
+  color4 CHAR(7) NOT NULL,
+  color5 CHAR(7) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS lagerfeuer_scenario (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  seconds INT NOT NULL,
+  params JSON NULL
+);
+
+CREATE TABLE IF NOT EXISTS calendar_event (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  start DATETIME NOT NULL,
+  `end` DATETIME NULL,
+  all_day TINYINT(1) NOT NULL DEFAULT 0,
+  meta JSON NULL
+);
+
+CREATE TABLE IF NOT EXISTS export_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  kind VARCHAR(32) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
