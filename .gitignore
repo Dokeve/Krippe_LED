@@ -14,3 +14,10 @@ logs/
 backups/
 _tmp_*
 *.log
+
+# IDEs und Editoren
+.vscode/
+.idea/
+*.sublime-project
+
+sftp.json
