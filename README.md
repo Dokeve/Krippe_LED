@@ -5,6 +5,8 @@ Es unterstützt LED-Gruppen, Audio-Module, einen Kalender für Zeitpläne sowie 
 
 ---
 
+Enthält Codex (**AGENT.md**), Dokus, Konfigs, systemd-Unit **nativity.service**, Skripte und eine projektinterne **Codex-Agent-ID**.
+
 ## Features
 
 ### LED-Steuerung
@@ -69,3 +71,23 @@ cd led-sound-bachlauf
 
 # Abhängigkeiten installieren
 npm install
+
+
+## Schnellstart (Pi)
+
+```bash
+cp .env.example .env
+npm ci --omit=dev
+sudo ./scripts/install_systemd.sh
+sudo systemctl status nativity -n 100
+```
+
+## Morgan-Logging
+
+```bash
+npm i morgan
+# In server.js
+import morgan from 'morgan'
+app.use(morgan('combined'))
+```
+Logs ansehen: `journalctl -u nativity -n 200`

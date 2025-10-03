@@ -1,0 +1,14 @@
+{
+  "groups": [
+    {
+      "id": 1,
+      "name": "Bachlauf",
+      "color": "#00AEEF",
+      "start_time": "08:00",
+      "end_time": "21:00",
+      "count": 200,
+      "gpio": 12,
+      "brightness": 128
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+[Unit]
+Description=Nativity Web Service (Krippe)
+After=network-online.target mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/singer/led-sound-bachlauf
+ExecStart=/usr/bin/npm start --silent
+EnvironmentFile=/home/singer/led-sound-bachlauf/.env
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nativity
+
+[Install]
+WantedBy=multi-user.target
