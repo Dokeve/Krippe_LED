@@ -1,93 +1,68 @@
-# LED Sound Bachlauf – Steuerung & Weboberfläche
+﻿# LED Sound Bachlauf – Steuerung & Weboberfläche
 
-Dieses Projekt steuert einen LED-Bachlauf mit Audio-Integration über eine Weboberfläche (Node.js + Express + FullCalendar).  
-Es unterstützt LED-Gruppen, Audio-Module, einen Kalender für Zeitpläne sowie Export/Import der Konfiguration.
-
----
-
-Enthält Codex (**AGENT.md**), Dokus, Konfigs, systemd-Unit **nativity.service**, Skripte und eine projektinterne **Codex-Agent-ID**.
-
-## Features
-
-### LED-Steuerung
-- Verwaltung von LED-Gruppen und Untergruppen.
-- **Individuelle LED-Farben**: Farbauswahl über kompakte Quadrate, direkte Vorschau.
-- Speicherung und Wiederherstellung pro LED/Subgruppe.
-
-### Audio
-- Modul-basierte Audiosteuerung (getrennte Module, eigene Konfiguration).
-
-### Kalender
-- Monats-, Wochen- und Tagesansicht (FullCalendar).
-- **Einzeltermine und Serientermine (wöchentlich)** anlegbar.
-- Sofortige Anzeige nach dem Speichern (ohne Reload).
-- **Löschfunktionen**:  
-  - „Nur diesen Termin“  
-  - „Ganze Serie“ (alle Wiederholungen)
-
-### Export / Import
-- Export aller Konfigurationsdateien (`calendar.json`, `audio.json`, `led-groups.json`).
-- **Import-Funktion**: Upload der JSON-Dateien, Prüfung + automatisches Anwenden über die API.
-
-### Oberfläche
-- Einheitliches Dark-Blue-Theme.
-- Optionales Hintergrundbild (`public/1260222.jpg`).
-- Navigation zwischen allen Modulen.
+Dieses Repository enthält den aktuellen Entwicklungsstand der Krippen-Steuerung (LED, Audio, Scheduler) für den Raspberry Pi. Der Code basiert auf Node.js/Express und liefert momentan in erster Linie das Grundgerüst – viele in den Anforderungen (siehe `Grundlagen.txt`) genannten Funktionen sind noch nicht umgesetzt.
 
 ---
 
-## Technische Details
+## Aktueller Stand
+- Express-Server mit statischer Auslieferung (`public/`) und Health-Endpunkten ist verfügbar (`server.js`).
+- Morgan-basiertes HTTP-Logging ist integriert und kann über `.env` konfiguriert werden.
+- Basis-Konfiguration (`config.js`) lädt `.env`, setzt Pfade, GPIO-Werte und Zykluslängen.
+- Deployment-Hilfen (systemd-Unit, Installationsskripte) liegen unter `systemd/` und `scripts/`.
+- Erste Services wurden auf ES-Module portiert (u. a. `services/*`), einzelne CLI-/Testscripte verbleiben noch in CommonJS.
 
-### Backend
-- Node.js mit Express.
-- API-Endpunkte:
-  - `GET /api/calendar` – aktuelle Kalenderdaten
-  - `PUT /api/calendar` – gesamte Kalenderdaten ersetzen
-  - `POST /api/calendar/save` – Fallback-Speicherung
-  - `GET /api/audio`, `PUT /api/audio`
-  - `GET /api/led-groups`, `PUT /api/led-groups`
-  - `GET /api/health` – Healthcheck
-- Datenhaltung: MariaDB oder lokale JSON-Dateien (via `USE_FILE_DB=1`).
-
-### Frontend
-- Plain HTML, CSS, JavaScript.
-- [FullCalendar](https://fullcalendar.io/) für die Kalenderansicht.
-- Responsives Design für Desktop & Mobile.
+### Noch offen / in Arbeit
+- REST-API für Kalender, LED-Gruppen, Audio (derzeit keine produktiven Routen außer `/api/mode` und `/api/star`).
+- Konsolidierung der Scheduler-Implementierung (`scheduler.js` vs. `services/scheduler.js`) und Anbindung an echte LED-/Audio-Steuerung.
+- Datenbank-Schicht (`services/db.js`) benötigt eine einheitliche `query`-API sowie Methoden wie `getAudio()`.
+- Frontend-Seiten (`public/*.html`) besitzen noch keine Verbindung zu einem funktionsfähigen Backend.
+- Dokumentation und Datenmodelle aus `Grundlagen.txt` sind nur teilweise reflektiert (LED-Zeitfenster, Kalenderlogik, Audio-Zeitsteuerung, Export/Import).
 
 ---
 
-## Installation & Start
-
-### Voraussetzungen
-- Raspberry Pi / Linux-Host
-- Node.js ≥ 20
-- (optional) MariaDB, ansonsten File-DB
-
-### Setup
+## Installation & Nutzung (aktuell nur Grundgerüst)
 ```bash
 # Repository klonen
 git clone <repo-url> led-sound-bachlauf
 cd led-sound-bachlauf
 
-# Abhängigkeiten installieren
+# Abhängigkeiten installieren (enthalten bereits morgan)
 npm install
 
+# Entwicklungsstart (liefert statische Seiten und Health)
+npm start
+```
 
-## Schnellstart (Pi)
-
+### Deployment-Hinweise (Pi)
 ```bash
 cp .env.example .env
 npm ci --omit=dev
 sudo ./scripts/install_systemd.sh
-sudo systemctl status nativity -n 100
+sudo systemctl restart nativity
+```
+> Achtung: Ohne die oben genannten offenen Punkte ist die Anwendung noch nicht funktionsfähig für den produktiven Betrieb.
+
+---
+
+## Projektstruktur (Kurz)
+```
+.
+├── public/           # Statische HTML/CSS/JS, aktuell ohne aktive API-Anbindung
+├── routes/           # Express-Router (nur mode/star umgesetzt)
+├── services/         # LED-/Audio-/Star-Services (teilweise ESM, teilweise TODO)
+├── scripts/          # Deploy-/Systemd-Hilfen
+├── systemd/          # nativity.service
+├── docs/             # Kurzdokumente zu Status/Subsystemen
+└── Grundlagen.txt    # Vollständige Anforderungsliste
 ```
 
-## Morgan-Logging
+---
 
-```bash
-npm i morgan
-# In server.js
-import morgan from 'morgan'
-app.use(morgan('combined'))
-```
-Logs ansehen: `journalctl -u nativity -n 200`
+## Weiteres Vorgehen
+1. API-Routen für Kalender, LED-Gruppen, Audio implementieren und mit der DB verkabeln.
+2. Scheduler vereinheitlichen (ESM) und reale Steuerungslogik/Hardwarezugriffe ergänzen.
+3. Datenbank-/Persistenzschicht fertigstellen (Query-Hilfen, Migrationen nutzen).
+4. Frontend an neue APIs anschließen, Funktionen aus `Grundlagen.txt` iterativ umsetzen.
+5. Dokumentation fortlaufend mit dem tatsächlichen Stand synchron halten.
+
+Für Detailaufgaben siehe `docs/TASKS.md` sowie die Analyse in `Results.md`.
