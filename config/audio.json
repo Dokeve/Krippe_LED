@@ -1,0 +1,17 @@
+{
+  "profiles": [
+    {
+      "name": "Tag",
+      "loop": true,
+      "gain": -6,
+      "base_path_env": "AUDIO_BASE_PATH"
+    },
+    {
+      "name": "Nacht",
+      "loop": true,
+      "gain": -12,
+      "base_path_env": "AUDIO_BASE_PATH"
+    }
+  ],
+  "clips": []
+}
