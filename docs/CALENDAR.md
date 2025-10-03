@@ -1,18 +1,10 @@
 ﻿# CALENDAR (Status)
 
-Geplante Features:
-- FullCalendar-Frontend mit Monats-/Wochen-/Tagesansicht
-- Einträge mit Start/Ende, Modul 1 (gelb) / Modul 2 (blau), Serientermine
-- Export/Import der Kalenderdaten (JSON)
-- Scheduler-Anbindung zur Steuerung von LED/Audio-Modulen
+- File-Store: `data/calendar.json` (Event-Liste, optional seriesRoot).
+- API: `GET/PUT /api/calendar`, `POST /api/calendar/save` (Fallback).
+- Scheduler: Pollt alle 5 s, setzt Modul 1/2, übergibt Zyklus-Sekunde an LED/Audio.
 
-Aktueller Stand:
-- Frontend `public/calendar.html` & `public/js/calendar.js` vorhanden, jedoch ohne aktive API.
-- REST-Routen (`GET/PUT /api/calendar`, `POST /api/calendar/save`) nicht implementiert.
-- Datenbanktabellen/Migrationslogik für Kalender nur rudimentär skizziert (`schema.sql`).
-- Scheduler reagiert noch nicht auf Kalenderdaten.
-
-To-do:
-1. API-Router `routes/calendar.js` erstellen und mit DB verbinden.
-2. Frontend an neue Endpunkte koppeln (CRUD, Farben, Serientermine).
-3. Scheduler-Integration implementieren (Modul 1/2 Umschaltung, Prioritätslogik bei angrenzenden Terminen).
+Offene Schritte:
+1. Datenbank-Anbindung & Server-Seitige Serienberechnung.
+2. Validierung (Überlappungen, angrenzende Einträge, Modul-Prioritäten).
+3. Optimierung Scheduler (Delta-Updates, Ereignis-Caching, Konfigurierbare Intervalle).

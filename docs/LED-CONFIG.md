@@ -7,7 +7,7 @@
 | BRIGHTNESS       | 128                   | 128 (anpassbar)         |
 | COLOR_ORDER      | GRB                   | GRB                     |
 
-Hinweise:
-- `services/ws2812.js` sowie `config.js`/`.env` setzen derzeit nur 200 LEDs – erhöhen, sobald Scheduler & Versorgung abgestimmt sind.
-- Scheduler-Anbindung für Szenarien (Tag, Tag→Nacht, Nacht, Nacht→Tag) fehlt noch.
-- Lagerfeuer-/Untergruppenlogik muss über separate Datenstrukturen (DB) ergänzt werden.
+- Konfiguration liegt in `data/led-groups.json` (via `/api/led-groups`).
+- Scheduler setzt Modus automatisch anhand Kalender (`Modul 1` → an, `Modul 2` → auto).
+- Lagerfeuer-/Szenario-Logik in `led-controll` noch rudimentär – Umsetzung laut `Grundlagen.txt` ausstehend.
+- MariaDB-Anbindung und Echtfarben-Feintuning stehen noch aus.

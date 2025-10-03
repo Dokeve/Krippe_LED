@@ -1,17 +1,14 @@
 ﻿# DB – Skizze
 
-Vorgesehene Tabellen (vgl. `Grundlagen.txt`):
+Aktuell: File-Stores (`data/audio.json`, `data/led-groups.json`, `data/calendar.json`). MariaDB bleibt Zielsystem.
+
+Geplante Tabellen (vgl. `Grundlagen.txt`):
 - `settings`
-- `audio_entries` (Sprachclips + BGM-Zuweisungen)
-- `led_groups` / `led_subgroups` / `scenarios`
+- `audio_entries` (Sprachclips + BGM)
+- `led_groups`, `led_subgroups`, `scenarios`
 - `calendar_events`
 
-Aktueller Stand:
-- `schema.sql` und `schema.js` enthalten nur Entwürfe; produktive Migrationen fehlen.
-- `services/db.js` stellt den Pool bereit, aber keine generischen Query-Helfer.
-- REST-Routen greifen noch nicht auf die DB zu.
-
-To-do:
-1. Tabellenstruktur finalisieren und Migrationen ergänzen (`migrations/`).
-2. Datenzugriffsschicht (Query-Wrapper, DAO-Funktionen) implementieren.
-3. API/Services an die DB anbinden.
+Nächste Schritte:
+1. Migrationen & Schema finalisieren (`migrations/`).
+2. DAO-Schicht/Queries implementieren, Umschalter `USE_FILE_DB` nutzen.
+3. REST-APIs auf MariaDB-Backends umstellen, File-Stores als Fallback behalten.

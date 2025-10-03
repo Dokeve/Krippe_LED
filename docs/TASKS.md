@@ -1,18 +1,16 @@
 ﻿# TASKS (Nächste Schritte)
 
-1. **REST-API fertigstellen**
-   - LED-Gruppen (CRUD, Szenario-Zeitfenster, Lagerfeuer)
-   - Kalender (Module 1/2, Serientermine, Farbkennzeichnung)
-   - Audio (Sprachclips, Hintergrundmusik, Dateiauswahl)
-2. **Scheduler konsolidieren**
-   - ESM-Version vereinheitlichen, LED-/Audio-Aufrufe mit Zykluslogik verknüpfen
-   - GPIO-Ansteuerung (Pumpe, Button) integrieren
-3. **Persistenz erweitern**
-   - `services/db.js`: generische `query`-Funktion, spezialisierte Getter/Setter (z. B. `getAudio`, `saveLedGroups`)
-   - Migrationen anwenden/erweitern (`schema.sql`, `migrations/`)
-4. **Frontend an APIs anbinden**
-   - `public/*.html` + `public/js/*.js` auf neue REST-Endpunkte umstellen
-   - Validierung, Autosave, Import/Export-Flows ergänzen
-5. **Dokumentation & Konfig**
-   - LED-Count und Pfade an reale Installation angleichen (`.env`, `config.js`)
-   - docs/* laufend mit Status aktualisieren, Ergebnisse in `Results.md` festhalten
+1. **Persistenz/DB**
+   - MariaDB-Schema finalisieren (settings, audio, led, calendar)
+   - DAO/Query-Schicht implementieren (Fallback: JSON bleibt möglich)
+2. **LED-/Audio-Steuerung**
+   - LED-Gruppenlogik (Farben, Wand/Szenarien, Lagerfeuer) in `led-controll`
+   - GPIO-Pumpe & Button koppeln, Helligkeit/LED_COUNT auf Ist-Werte anpassen
+3. **Kalender-Serverlogik**
+   - Serientermine serverseitig expandieren, Priorisierung angrenzender Termine
+   - Validierung & Konfliktauflösung
+4. **REST-Erweiterungen**
+   - Import/Export-Endpoints, Auth (API-Key o.ä.), Error-Handling verbessern
+5. **Frontend & Tests**
+   - UI-Feedback (Speichererfolg/Fehler), Validierungen
+   - Unit-/Integrationstests für Stores, Scheduler, Routen
