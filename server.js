@@ -10,6 +10,11 @@ import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import config from './config.js';
 
+// NEU: morgan robust importieren (ESM/CJS sicher)
+import morgan from 'morgan';
+// [optional] kleines Hilfsding, falls du kein ensureDir hast:
+const ensureDirSync = (p) => { try { fs.mkdirSync(p, { recursive: true }); } catch {} };
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
@@ -29,6 +34,22 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// >>> NEU: morgan-Middleware einhängen
+if (config.logging?.morganEnabled) {
+  const skip = (req, _res) =>
+    config.logging.skipHealth && (req.path === '/health' || req.path.startsWith('/api/health'));
+
+  if (config.logging.morganToFile) {
+    ensureDirSync(path.dirname(config.logging.morganFilePath));
+    const stream = fs.createWriteStream(config.logging.morganFilePath, { flags: 'a' });
+    app.use(morgan(config.logging.morganFormat, { stream, skip }));
+    console.log(`[morgan] to file: ${config.logging.morganFilePath} (${config.logging.morganFormat})`);
+  } else {
+    // ins Journal (stdout) – systemd/journald fängt es ab
+    app.use(morgan(config.logging.morganFormat, { skip }));
+    console.log(`[morgan] to journal (${config.logging.morganFormat})`);
+  }
+}
 // Static (Frontend)
 if (fs.existsSync(config.paths.public)) {
   app.use(express.static(config.paths.public));
