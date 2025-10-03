@@ -1,8 +1,9 @@
 // routes/star.js
-// Letzte Änderung: 02.09.2025 11:25 Uhr
-const express = require('express');
-const router = express.Router();
-const store = require('../services/star-store');
+// Letzte Änderung: 03.10.2025 17:20 Uhr (ESM-Portierung)
+import { Router } from 'express';
+import * as store from '../services/star-store.js';
+
+const router = Router();
 
 // Status/Config lesen
 router.get('/', async (_req, res) => {
@@ -24,4 +25,4 @@ router.put('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

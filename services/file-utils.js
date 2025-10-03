@@ -1,13 +1,13 @@
 // services/file-utils.js
-// Letzte Änderung: 30.08.2025 19.15 Uhr
-const fs = require('fs');
-const path = require('path');
+// Letzte Änderung: 03.10.2025 17:20 Uhr (ESM-Portierung)
+import fs from 'node:fs';
+import path from 'node:path';
 
-function ensureDir(p) {
+export function ensureDir(p) {
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
 }
 
-function readJson(filePath, fallback = null) {
+export function readJson(filePath, fallback = null) {
   try {
     if (!fs.existsSync(filePath)) {
       if (fallback !== null) {
@@ -25,7 +25,7 @@ function readJson(filePath, fallback = null) {
   }
 }
 
-function writeJson(filePath, data) {
+export function writeJson(filePath, data) {
   try {
     ensureDir(path.dirname(filePath));
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
@@ -36,13 +36,13 @@ function writeJson(filePath, data) {
   }
 }
 
-function listFilesSafe(dir, exts = []) {
+export function listFilesSafe(dir, exts = []) {
   try {
     const list = fs.readdirSync(dir, { withFileTypes: true });
     return list
       .filter(d => d.isFile())
       .map(d => d.name)
-      .filter(n => exts.length ? exts.some(ext => n.toLowerCase().endsWith(ext)) : true)
+      .filter(n => (exts.length ? exts.some(ext => n.toLowerCase().endsWith(ext)) : true))
       .sort();
   } catch (e) {
     console.warn('[file-utils] listFilesSafe failed:', e.message);
@@ -50,4 +50,4 @@ function listFilesSafe(dir, exts = []) {
   }
 }
 
-module.exports = { ensureDir, readJson, writeJson, listFilesSafe };
+export default { ensureDir, readJson, writeJson, listFilesSafe };

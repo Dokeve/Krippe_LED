@@ -1,16 +1,16 @@
 // services/led-controll.js
-// Letzte Änderung: 01.09.2025 16:05 Uhr
-const ws = require('./ws2812');
-const db = require('./db');
-const { getActiveScenarioAt, lerpColor, findScenario } = require('./scenario-controll');
+// Letzte Änderung: 03.10.2025 17:20 Uhr (ESM-Portierung)
+import ws from './ws2812.js';
+import * as db from './db.js';
+import { getActiveScenarioAt, lerpColor, findScenario } from './scenario-controll.js';
 
 let _mode = 'auto'; // 'on' | 'off' | 'auto'
 let _tick = 0;
 
-function setMode(m) { _mode = m; }
-function getMode() { return _mode; }
-function setTick(t){ _tick = t; }
-function getTick(){ return _tick; }
+export function setMode(m) { _mode = m; }
+export function getMode() { return _mode; }
+export function setTick(t) { _tick = t; }
+export function getTick() { return _tick; }
 
 function withinWindow(sec, start, end) {
   if (isNaN(start) && isNaN(end)) return true;
@@ -21,27 +21,34 @@ function withinWindow(sec, start, end) {
 
 function selectedIndexes(text, count) {
   const set = new Set();
-  (text||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(part=>{
+  (text || '').split(',').map(s => s.trim()).filter(Boolean).forEach(part => {
     if (part.includes('-')) {
-      const [a,b] = part.split('-').map(n=>parseInt(n,10));
-      if (!isNaN(a)&&!isNaN(b)) for (let i=Math.max(1,Math.min(a,b)); i<=Math.min(count, Math.max(a,b)); i++) set.add(i-1);
+      const [a, b] = part.split('-').map(n => parseInt(n, 10));
+      if (!isNaN(a) && !isNaN(b)) {
+        for (let i = Math.max(1, Math.min(a, b)); i <= Math.min(count, Math.max(a, b)); i++) {
+          set.add(i - 1);
+        }
+      }
     } else {
-      const n = parseInt(part,10); if (!isNaN(n) && n>=1 && n<=count) set.add(n-1);
+      const n = parseInt(part, 10);
+      if (!isNaN(n) && n >= 1 && n <= count) set.add(n - 1);
     }
   });
-  return Array.from(set).sort((a,b)=>a-b);
+  return Array.from(set).sort((a, b) => a - b);
 }
 
-async function applyModuleOn(colorHex='#ffff00') {
-  ws.fillRange(0, ws.count-1, colorHex);
-  ws.render();
+export async function applyModuleOn(colorHex = '#ffff00') {
+  const count = ws.count ?? 0;
+  if (count > 0) {
+    ws.fillRange(0, count - 1, colorHex);
+    ws.render();
+  }
 }
 
-async function applyModuleOff() {
-  ws.clear();
+export async function applyModuleOff() {
+  ws.clear?.();
 }
 
-// Hilfsfunktion: Farbe für Untergruppe-Pixel i (0-basiert) wählen
 function colorForIndex(baseColor, colorsArray, i) {
   if (Array.isArray(colorsArray) && colorsArray[i] && /^#[0-9a-fA-F]{6}$/.test(colorsArray[i])) {
     return colorsArray[i];
@@ -49,19 +56,19 @@ function colorForIndex(baseColor, colorsArray, i) {
   return baseColor;
 }
 
-async function applyModuleAuto() {
+export async function applyModuleAuto() {
   const ledCfg = await db.getLed();
   const active = getActiveScenarioAt(getTick());
-  ws.clear();
+  ws.clear?.();
 
   const groups = [];
-  if (ledCfg.adventActive) groups.push(...(ledCfg.advent||[]));
-  if (ledCfg.weihnachtActive) groups.push(...(ledCfg.weihnacht||[]));
+  if (ledCfg.adventActive) groups.push(...(ledCfg.advent || []));
+  if (ledCfg.weihnachtActive) groups.push(...(ledCfg.weihnacht || []));
 
   for (const sub of groups) {
-    const from = Math.max(0, sub.ledFrom|0);
-    const to = Math.min(ws.count-1, sub.ledTo|0);
-    const count = Math.max(0, sub.ledCount|0);
+    const from = Math.max(0, sub.ledFrom | 0);
+    const to = Math.min((ws.count ?? 0) - 1, sub.ledTo | 0);
+    const count = Math.max(0, sub.ledCount | 0);
     const colorDay = sub.colorDay || '#000000';
     const colorNight = sub.colorNight || '#000000';
     const perLed = Array.isArray(sub.colors) ? sub.colors : null;
@@ -78,13 +85,12 @@ async function applyModuleAuto() {
       }
     }
 
-    // Wenn keine Szenarien: Basis / per-LED anwenden
     if (!Array.isArray(sub.scenarios) || sub.scenarios.length === 0) {
       if (perLed && perLed.length) {
-        for (let rel=0; rel<count; rel++) {
+        for (let rel = 0; rel < count; rel++) {
           const abs = from + rel;
-          if (abs>=from && abs<=to) {
-            ws.setPixel(abs, colorForIndex(baseColor, perLed, rel));
+          if (abs >= from && abs <= to) {
+            ws.setPixel?.(abs, colorForIndex(baseColor, perLed, rel));
           }
         }
       } else {
@@ -93,22 +99,21 @@ async function applyModuleAuto() {
       continue;
     }
 
-    // Mit Szenarien
     let anyApplied = false;
     for (const sc of sub.scenarios) {
       if (!sc.name) continue;
       if (sc.name !== active.name) continue;
-      const s = parseInt(sc.start); const e = parseInt(sc.end);
+      const s = parseInt(sc.start);
+      const e = parseInt(sc.end);
       if (!withinWindow(active.second, s, e)) continue;
 
       const sel = selectedIndexes(sc.leds || '', count);
       if (sel.length === 0) {
-        // Keine Auswahl → ganze Range, ggf. mit per-LED
         if (perLed && perLed.length) {
-          for (let rel=0; rel<count; rel++) {
+          for (let rel = 0; rel < count; rel++) {
             const abs = from + rel;
-            if (abs>=from && abs<=to) {
-              ws.setPixel(abs, colorForIndex(baseColor, perLed, rel));
+            if (abs >= from && abs <= to) {
+              ws.setPixel?.(abs, colorForIndex(baseColor, perLed, rel));
             }
           }
         } else {
@@ -116,28 +121,29 @@ async function applyModuleAuto() {
         }
         anyApplied = true;
       } else {
-        // Selektierte Indizes, ggf. mit per-LED
         for (const rel of sel) {
           const abs = from + rel;
-          if (abs>=from && abs<=to) {
-            ws.setPixel(abs, colorForIndex(baseColor, perLed, rel));
+          if (abs >= from && abs <= to) {
+            ws.setPixel?.(abs, colorForIndex(baseColor, perLed, rel));
           }
         }
         anyApplied = true;
       }
     }
 
-    // Wenn keine Regel griff → nichts tun (bleibt aus), wie bisher
+    if (!anyApplied) {
+      // keine Regel griff ? nichts tun (bleibt aus)
+    }
   }
 
-  // Lagerfeuer bleibt wie gehabt
   if (ledCfg.lagerfeuer && ledCfg.lagerfeuer.colors && ledCfg.lagerfeuer.scenarios) {
-    const from = ledCfg.lagerfeuer.ledFrom|0;
-    const to = ledCfg.lagerfeuer.ledTo|0;
+    const from = ledCfg.lagerfeuer.ledFrom | 0;
+    const to = ledCfg.lagerfeuer.ledTo | 0;
     const cols = ledCfg.lagerfeuer.colors.filter(Boolean);
     for (const sc of ledCfg.lagerfeuer.scenarios) {
       if (sc.name !== active.name) continue;
-      const s = parseInt(sc.start); const e = parseInt(sc.end);
+      const s = parseInt(sc.start);
+      const e = parseInt(sc.end);
       if (!withinWindow(active.second, s, e)) continue;
       if (cols.length) {
         const phase = Math.floor((getTick() % cols.length));
@@ -146,15 +152,22 @@ async function applyModuleAuto() {
     }
   }
 
-  ws.render();
+  ws.render?.();
 }
 
-async function apply() {
+export async function apply() {
   if (_mode === 'off') return applyModuleOff();
   if (_mode === 'on') return applyModuleOn();
   return applyModuleAuto();
 }
 
-module.exports = {
-  setMode, getMode, setTick, getTick, apply
+export default {
+  setMode,
+  getMode,
+  setTick,
+  getTick,
+  apply,
+  applyModuleOn,
+  applyModuleOff,
+  applyModuleAuto
 };
