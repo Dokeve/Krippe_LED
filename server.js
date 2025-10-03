@@ -1,5 +1,5 @@
-ï»¿// server.js â€” Rahmenserver fÃ¼r Krippe_LED (ESM, Node â‰¥ 20)
-// LÃ¤dt Router aus ./routes automatisch, liefert Health, startet optional scheduler.
+// server.js — Rahmenserver für Krippe_LED (ESM, Node = 20)
+// Lädt Router aus ./routes automatisch, liefert Health, startet optional scheduler.
 // Erwartete Routen-Dateien (wenn vorhanden): health.js, audio.js, calendar.js, led-groups.js, star.js
 
 import express from 'express';
@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// >>> NEU: morgan-Middleware einhÃ¤ngen
+// >>> NEU: morgan-Middleware einhängen
 if (config.logging?.morganEnabled) {
   const skip = (req, _res) =>
     config.logging.skipHealth && (req.path === '/health' || req.path.startsWith('/api/health'));
@@ -45,7 +45,7 @@ if (config.logging?.morganEnabled) {
     app.use(morgan(config.logging.morganFormat, { stream, skip }));
     console.log(`[morgan] to file: ${config.logging.morganFilePath} (${config.logging.morganFormat})`);
   } else {
-    // ins Journal (stdout) â€“ systemd/journald fÃ¤ngt es ab
+    // ins Journal (stdout) – systemd/journald fängt es ab
     app.use(morgan(config.logging.morganFormat, { skip }));
     console.log(`[morgan] to journal (${config.logging.morganFormat})`);
   }
@@ -78,7 +78,8 @@ const expectedRouters = [
   { file: 'audio.js',      base: '/api/audio' },
   { file: 'calendar.js',   base: '/api/calendar' },
   { file: 'led-groups.js', base: '/api/led-groups' },
-  { file: 'star.js',       base: '/api/star' }          // falls bei euch vorhanden
+  { file: 'star.js',       base: '/api/star' },
+  { file: 'files.js',      base: '/api/list-files' }
 ];
 
 for (const { file, base } of expectedRouters) {
@@ -90,19 +91,19 @@ for (const { file, base } of expectedRouters) {
       app.use(base, router);
       console.log(`[router] mounted ${base} -> routes/${file}`);
     } else {
-      console.warn(`[router] routes/${file} exportiert keinen Router (default/function). Ã¼bersprungen.`);
+      console.warn(`[router] routes/${file} exportiert keinen Router (default/function). übersprungen.`);
     }
   } else {
-    console.warn(`[router] fehlt: routes/${file} (base ${base}) â€“ wird nicht gemountet.`);
+    console.warn(`[router] fehlt: routes/${file} (base ${base}) – wird nicht gemountet.`);
   }
 }
 
-// 404 fÃ¼r /api/*
+// 404 für /api/*
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
 });
 
-// Fallback 404 fÃ¼r alles andere
+// Fallback 404 für alles andere
 app.use((req, res) => {
   res.status(404).send('Krippe Webserver: Seite nicht gefunden.');
 });
@@ -117,7 +118,7 @@ try {
       await startFn({ app, config });
       console.log('[scheduler] gestartet');
     } else {
-      console.log('[scheduler] gefunden, aber keine start()-Funktion exportiert â€“ Ã¼bersprungen');
+      console.log('[scheduler] gefunden, aber keine start()-Funktion exportiert – übersprungen');
     }
   }
 } catch (e) {
@@ -127,12 +128,15 @@ try {
 // Start
 const server = http.createServer(app);
 server.listen(config.port, () => {
-  console.log(`Server lÃ¤uft auf http://localhost:${config.port}`);
+  console.log(`Server läuft auf http://localhost:${config.port}`);
 });
 
 // Robustheit
 process.on('unhandledRejection', (err) => console.error('[unhandledRejection]', err));
 process.on('uncaughtException', (err) => console.error('[uncaughtException]', err));
 
-// Optional fÃ¼r Tests
+// Optional für Tests
 export default app;
+
+
+

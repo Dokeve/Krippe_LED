@@ -1,7 +1,7 @@
 // services/led-controll.js
 // Letzte Änderung: 03.10.2025 17:20 Uhr (ESM-Portierung)
 import ws from './ws2812.js';
-import * as db from './db.js';
+import { getLedConfig } from './led-store.js';
 import { getActiveScenarioAt, lerpColor, findScenario } from './scenario-controll.js';
 
 let _mode = 'auto'; // 'on' | 'off' | 'auto'
@@ -57,7 +57,7 @@ function colorForIndex(baseColor, colorsArray, i) {
 }
 
 export async function applyModuleAuto() {
-  const ledCfg = await db.getLed();
+  const ledCfg = getLedConfig();
   const active = getActiveScenarioAt(getTick());
   ws.clear?.();
 
@@ -171,3 +171,4 @@ export default {
   applyModuleOff,
   applyModuleAuto
 };
+

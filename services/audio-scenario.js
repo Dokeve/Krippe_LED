@@ -1,8 +1,8 @@
-// services/audio-scenario.js
-// Letzte Änderung: 03.10.2025 17:20 Uhr (ESM-Portierung)
+﻿// services/audio-scenario.js
+// Audio-Steuerung (Ducking, Sprachclips) – nutzt audio-store statt DB
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import * as db from './db.js';
+import { getAudioConfig } from './audio-store.js';
 import { getActiveScenarioAt } from './scenario-controll.js';
 import config from '../config.js';
 
@@ -12,26 +12,21 @@ let player = null;
 try {
   player = require('play-sound')({});
 } catch {
-  console.warn('[SIMULATION] Audio-Player nicht verfuegbar - Audio wird simuliert');
+  console.warn('[SIMULATION] Audio-Player nicht verfügbar – Audio wird simuliert');
 }
 
-const AUDIO_BACKGROUND_DIR = config.paths?.audio?.background
-  ?? config.paths?.audioBgm
-  ?? path.join(config.paths?.audioRoot ?? path.resolve('audio'), 'Hintergrundmusik');
-
-const AUDIO_SPEECH_DIR = config.paths?.audio?.speech
-  ?? config.paths?.audioSpeech
-  ?? path.join(config.paths?.audioRoot ?? path.resolve('audio'), 'Audioprachdateien');
+const AUDIO_ROOT = config.paths?.audioRoot ?? path.join(process.cwd(), 'audio');
+const AUDIO_BACKGROUND_DIR = config.paths?.audioBgm ?? path.join(AUDIO_ROOT, 'Hintergrundmusik');
+const AUDIO_SPEECH_DIR = config.paths?.audioSpeech ?? path.join(AUDIO_ROOT, 'Audioprachdateien');
 
 let bgCurrent = null;
 let speechLock = false;
 
 export async function tickAudio(secondInCycle) {
-  const audioCfg = await db.getAudio();
+  const audioCfg = getAudioConfig();
   const { name } = getActiveScenarioAt(secondInCycle);
 
-  // Hintergrund je Szenario
-  const bgMap = audioCfg.background || {}; // { 'Tag': 'Tag.mp3', ... }
+  const bgMap = audioCfg.background || {};
   const file = bgMap[name];
   if (file && !speechLock) {
     playBackground(file, audioCfg.volume?.background ?? 100);
@@ -39,7 +34,6 @@ export async function tickAudio(secondInCycle) {
     stopBackground();
   }
 
-  // Sprachdateien zeitgesteuert: Wenn Datum innerhalb [from, to] und Modul 2 aktiv ? abspielen
   const today = new Date().toISOString().slice(0, 10);
   const list = audioCfg.speech || [];
   for (const s of list) {
@@ -91,7 +85,7 @@ export function stopBackground() {
 export function playSpeech(file, vol = 100) {
   const f = fullPath(AUDIO_SPEECH_DIR, file);
   if (!f) return Promise.resolve();
-  stopBackground(); // ducken
+  stopBackground();
   if (!player) {
     console.log('[SIMULATION] Sprachdatei:', f, 'vol', vol);
     return new Promise(res => setTimeout(res, 2000));
@@ -100,7 +94,7 @@ export function playSpeech(file, vol = 100) {
     const pr = player.play(f, { afplay: ['-v', vol / 100] }, err => {
       if (err) console.error('Speech error:', err.message);
       resolve();
-      bgCurrent = null; // erlauben, dass Tick wieder BG startet
+      bgCurrent = null;
     });
     player._speech = pr;
   });

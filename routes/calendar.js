@@ -1,19 +1,33 @@
 ﻿// routes/calendar.js
 import { Router } from 'express';
+import { getCalendarEvents, saveCalendarEvents } from '../services/calendar-store.js';
 
 const router = Router();
 
-// TODO: Implement real calendar CRUD (MariaDB) and validation
 router.get('/', (_req, res) => {
-  res.status(501).json({ error: 'Calendar API not implemented yet', todo: ['Query calendar events', 'Apply module color metadata', 'Handle pagination/filters'] });
+  try {
+    res.json(getCalendarEvents());
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to load calendar events', detail: e?.message || String(e) });
+  }
 });
 
-router.put('/', (_req, res) => {
-  res.status(501).json({ error: 'Calendar API not implemented yet', todo: ['Validate events payload', 'Upsert events (and series)', 'Return updated dataset'] });
+router.put('/', (req, res) => {
+  try {
+    const saved = saveCalendarEvents(Array.isArray(req.body) ? req.body : []);
+    res.json({ ok: true, count: saved.length });
+  } catch (e) {
+    res.status(400).json({ error: 'Failed to save calendar events', detail: e?.message || String(e) });
+  }
 });
 
-router.post('/save', (_req, res) => {
-  res.status(501).json({ error: 'Calendar save fallback not implemented yet', todo: ['Persist single event', 'Return confirmation'] });
+router.post('/save', (req, res) => {
+  try {
+    const saved = saveCalendarEvents(Array.isArray(req.body) ? req.body : []);
+    res.json({ ok: true, count: saved.length });
+  } catch (e) {
+    res.status(400).json({ error: 'Failed to save calendar events', detail: e?.message || String(e) });
+  }
 });
 
 export default router;

@@ -1,15 +1,24 @@
 ﻿// routes/led-groups.js
 import { Router } from 'express';
+import { getLedConfig, saveLedConfig } from '../services/led-store.js';
 
 const router = Router();
 
-// TODO: Wire up LED group CRUD with DB/service layer
 router.get('/', (_req, res) => {
-  res.status(501).json({ error: 'LED groups API not implemented yet', todo: ['Load LED groups/subgroups', 'Include scenarios & colors', 'Return structured response'] });
+  try {
+    res.json(getLedConfig());
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to load LED groups', detail: e?.message || String(e) });
+  }
 });
 
-router.put('/', (_req, res) => {
-  res.status(501).json({ error: 'LED groups API not implemented yet', todo: ['Validate LED group payload', 'Persist changes', 'Trigger scheduler/LED refresh'] });
+router.put('/', (req, res) => {
+  try {
+    const saved = saveLedConfig(req.body || {});
+    res.json({ ok: true, config: saved });
+  } catch (e) {
+    res.status(400).json({ error: 'Failed to save LED groups', detail: e?.message || String(e) });
+  }
 });
 
 export default router;

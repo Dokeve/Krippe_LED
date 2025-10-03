@@ -1,15 +1,24 @@
 ﻿// routes/audio.js
 import { Router } from 'express';
+import { getAudioConfig, saveAudioConfig } from '../services/audio-store.js';
 
 const router = Router();
 
-// TODO: Replace placeholder logic with real DB-backed audio service
 router.get('/', (_req, res) => {
-  res.status(501).json({ error: 'Audio API not implemented yet', todo: ['Load audio config from DB', 'Return speech/background lists'] });
+  try {
+    res.json(getAudioConfig());
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to read audio configuration', detail: e?.message || String(e) });
+  }
 });
 
-router.put('/', (_req, res) => {
-  res.status(501).json({ error: 'Audio API not implemented yet', todo: ['Validate payload', 'Persist audio config', 'Trigger scheduler/audio reload'] });
+router.put('/', (req, res) => {
+  try {
+    const saved = saveAudioConfig(req.body || {});
+    res.json({ ok: true, config: saved });
+  } catch (e) {
+    res.status(400).json({ error: 'Failed to save audio configuration', detail: e?.message || String(e) });
+  }
 });
 
 export default router;
