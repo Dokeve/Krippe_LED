@@ -1,4 +1,4 @@
-// server.js — Rahmenserver für Krippe_LED (ESM, Node ≥ 20)
+﻿// server.js — Rahmenserver für Krippe_LED (ESM, Node ≥ 20)
 // Lädt Router aus ./routes automatisch, liefert Health, startet optional scheduler.
 // Erwartete Routen-Dateien (wenn vorhanden): health.js, audio.js, calendar.js, led-groups.js, star.js
 
@@ -90,7 +90,7 @@ for (const { file, base } of expectedRouters) {
       app.use(base, router);
       console.log(`[router] mounted ${base} -> routes/${file}`);
     } else {
-      console.warn(`[router] routes/${file} exportiert keinen Router (default/function). Übersprungen.`);
+      console.warn(`[router] routes/${file} exportiert keinen Router (default/function). übersprungen.`);
     }
   } else {
     console.warn(`[router] fehlt: routes/${file} (base ${base}) – wird nicht gemountet.`);
@@ -109,10 +109,10 @@ app.use((req, res) => {
 
 // Optional: Scheduler starten, falls vorhanden (start() wird aufgerufen, wenn exportiert)
 try {
-  const schedPath = join(__dirname, 'scheduler.js');
+  const schedPath = join(__dirname, 'services', 'scheduler.js');
   if (fs.existsSync(schedPath)) {
     const schedMod = await import(pathToFileURL(schedPath).href);
-    const startFn = schedMod.start ?? schedMod.default?.start;
+    const startFn = schedMod.start ?? schedMod.startScheduler ?? schedMod.default?.start;
     if (typeof startFn === 'function') {
       await startFn({ app, config });
       console.log('[scheduler] gestartet');
