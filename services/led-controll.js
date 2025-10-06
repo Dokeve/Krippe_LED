@@ -1,38 +1,39 @@
 ﻿// services/led-controll.js
-// Steuert LED-Modus (an/aus/auto) auf Basis von Ladenkonfiguration und Szenarien.
-// Die Funktion stellt sicher, dass der WS2812-Treiber initialisiert ist, bevor Pixel beschrieben werden.
+// Steuert LED-Modus (an/aus/auto) auf Basis der Konfiguration und Szenarien.
+// Initialisiert den WS281x-Treiber nur bei Bedarf für die konfigurierte LED-Anzahl.
 import ws from './ws2812.js';
 import { getLedConfig } from './led-store.js';
 import { getActiveScenarioAt, lerpColor } from './scenario-controll.js';
 import config from '../config.js';
 
-let _mode = 'auto'; // gültige Werte: 'on' | 'off' | 'auto'
-let _tick = 0;      // aktuelle Sekunde im Zyklus für Modul "auto"
+let currentMode = 'auto';
+let currentTick = 0;
 
 export function setMode(mode) {
-  _mode = typeof mode === 'string' ? mode : 'auto';
+  currentMode = typeof mode === 'string' ? mode : 'auto';
 }
 
 export function getMode() {
-  return _mode;
+  return currentMode;
 }
 
 export function setTick(tick) {
-  _tick = Number.isFinite(tick) ? tick : 0;
+  currentTick = Number.isFinite(tick) ? tick : 0;
 }
 
 export function getTick() {
-  return _tick;
+  return currentTick;
 }
 
-async function ensureInitialized() {\n  await ws.initLEDs(config.led.count);\n}
+async function ensureInitialized() {
+  await ws.initLEDs(config.led.count);
 }
 
-function withinWindow(sec, start, end) {
+function withinWindow(second, start, end) {
   if (Number.isNaN(start) && Number.isNaN(end)) return true;
-  if (!Number.isNaN(start) && Number.isNaN(end)) return sec >= start;
-  if (Number.isNaN(start) && !Number.isNaN(end)) return sec <= end;
-  return sec >= start && sec <= end;
+  if (!Number.isNaN(start) && Number.isNaN(end)) return second >= start;
+  if (Number.isNaN(start) && !Number.isNaN(end)) return second <= end;
+  return second >= start && second <= end;
 }
 
 function selectedIndexes(text, count) {
@@ -57,7 +58,7 @@ function selectedIndexes(text, count) {
   return Array.from(set).sort((a, b) => a - b);
 }
 
-export async function applyModuleOn(colorHex = '#ffff00') {
+export async function applyModuleOn(colorHex = '#ff0000') {
   await ensureInitialized();
   const count = ws.count ?? 0;
   if (count > 0) {
@@ -179,8 +180,8 @@ export async function applyModuleAuto() {
 }
 
 export async function apply() {
-  if (_mode === 'off') return applyModuleOff();
-  if (_mode === 'on') return applyModuleOn();
+  if (currentMode === 'off') return applyModuleOff();
+  if (currentMode === 'on') return applyModuleOn();
   return applyModuleAuto();
 }
 
@@ -194,4 +195,3 @@ export default {
   applyModuleOff,
   applyModuleAuto
 };
-
