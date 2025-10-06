@@ -25,11 +25,7 @@ export function getTick() {
   return _tick;
 }
 
-async function ensureInitialized() {
-  const targetCount = config.led?.count ?? 200;
-  if ((ws.count ?? 0) !== targetCount) {
-    await ws.initLEDs(targetCount);
-  }
+async function ensureInitialized() {\n  await ws.initLEDs(config.led.count);\n}
 }
 
 function withinWindow(sec, start, end) {
@@ -61,7 +57,7 @@ function selectedIndexes(text, count) {
   return Array.from(set).sort((a, b) => a - b);
 }
 
-export async function applyModuleOn(colorHex = '#ff0000ff') {
+export async function applyModuleOn(colorHex = '#ffff00') {
   await ensureInitialized();
   const count = ws.count ?? 0;
   if (count > 0) {
@@ -198,3 +194,4 @@ export default {
   applyModuleOff,
   applyModuleAuto
 };
+

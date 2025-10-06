@@ -1,7 +1,6 @@
-# DECISIONS
+﻿# Entscheidungsgrundlagen
 
-- DB = Source of Truth (star.json Ausnahme)  
-- ALT-WS281x + GRB-Software-Permutation  
-- GPIO: LED12, Pumpe19, Button13  
+- rpi-ws281x (WS281x-Treiber) mit GRB-Software-Permutation
+- GPIO: LED 12, Pumpe 19, Button 13
 - 4-Phasen-Zyklus
-- systemd: nativity.service als einziger Prod-Dienst
+- systemd: nativity.service als einziger Produktiv-Dienst

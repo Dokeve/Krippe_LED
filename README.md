@@ -70,3 +70,4 @@ sudo systemctl restart nativity
 4. Frontend mit erweiterten Statusmeldungen/Validierungen ausstatten.
 5. Dokumentation & Tests kontinuierlich nachziehen (`docs/`, `Results.md`).
 
+

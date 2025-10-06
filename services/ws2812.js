@@ -1,18 +1,26 @@
 ﻿// services/ws2812.js
-// Steuerung der WS2812-LEDs über die ALT-Library `rpi-ws281x` (GRB).
-let driver = null;          // geladene rpi-ws281x Instanz
-let initialized = false;    // merkt, ob configure() bereits ausgeführt wurde
-let numLEDs = 0;            // aktuell konfigurierte LED-Anzahl
-let pixelData = null;       // gemeinsamer Pixelpuffer (Uint32Array)
-const gpioPin = 12;         // GPIO für WS2812 (Pin 32)
-let brightness = 128;       // Standardhelligkeit 0..255
+// Steuerung der WS281x-LEDs über die Bibliothek `rpi-ws281x`.
+import config from '../config.js';
 
-function hexToGRB(hex) {
-  const v = parseInt((hex || '#000000').slice(1), 16) >>> 0;
-  const r = (v >> 16) & 0xff;
-  const g = (v >> 8) & 0xff;
-  const b = v & 0xff;
-  return (g << 16) | (r << 8) | b;
+let driver = null;          // Geladene rpi-ws281x-Instanz
+let initialized = false;    // Ob configure() bereits ausgeführt wurde
+let numLEDs = 0;            // Aktuell konfigurierte LED-Anzahl
+let pixelData = null;       // Gemeinsamer Pixelpuffer (Uint32Array)
+
+function packColor(hex) {
+  const value = parseInt((hex || '#000000').slice(1), 16) >>> 0;
+  const r = (value >> 16) & 0xff;
+  const g = (value >> 8) & 0xff;
+  const b = value & 0xff;
+  switch ((config.led.order || 'GRB').toUpperCase()) {
+    case 'RGB': return (r << 16) | (g << 8) | b;
+    case 'RBG': return (r << 16) | (b << 8) | g;
+    case 'GRB': return (g << 16) | (r << 8) | b;
+    case 'GBR': return (g << 16) | (b << 8) | r;
+    case 'BRG': return (b << 16) | (r << 8) | g;
+    case 'BGR': return (b << 16) | (g << 8) | r;
+    default:    return (g << 16) | (r << 8) | b;
+  }
 }
 
 async function loadDriver() {
@@ -20,16 +28,16 @@ async function loadDriver() {
   try {
     const mod = await import('rpi-ws281x');
     driver = mod?.default || mod;
-  } catch (err) {
-    console.warn('[WS2812] rpi-ws281x konnte nicht geladen werden – Simulation aktiv.', err?.message || err);
+  } catch (error) {
+    console.warn('[WS2812] rpi-ws281x konnte nicht geladen werden – Simulation aktiv.', error?.message || error);
     driver = false;
   }
   return driver;
 }
 
-export async function initLEDs(count = 1000) {
+export async function initLEDs(count = config.led.count) {
   const ws = await loadDriver();
-  if (!ws) return; // Simulation
+  if (!ws) return;
 
   const target = Math.max(1, Number(count) || 1);
   if (initialized && numLEDs === target && pixelData instanceof Uint32Array) {
@@ -37,27 +45,27 @@ export async function initLEDs(count = 1000) {
   }
 
   if (typeof ws.configure !== 'function') {
-    throw new Error('rpi-ws281x bietet keine configure()-Funktion (ALT-Version erforderlich)');
+    throw new Error('rpi-ws281x bietet keine configure()-Funktion.');
   }
 
   numLEDs = target;
   pixelData = new Uint32Array(numLEDs);
 
-  ws.configure({ leds: numLEDs, gpio: gpioPin, brightness });
+  ws.configure({ leds: numLEDs, gpio: config.led.gpio, brightness: config.led.brightness });
   initialized = true;
-  console.log(`[WS2812] init: ${numLEDs} LEDs @ GPIO ${gpioPin} (Brightness ${brightness})`);
+  console.log(`[WS2812] init: ${numLEDs} LEDs @ GPIO ${config.led.gpio} (Brightness ${config.led.brightness}) order=${config.led.order || 'GRB'}`);
 }
 
 export function setPixel(index, hex) {
   if (!pixelData || index < 0 || index >= numLEDs) return;
-  pixelData[index] = hexToGRB(hex);
+  pixelData[index] = packColor(hex);
 }
 
 export function fillRange(a, b, hex) {
   if (!pixelData) return;
   const start = Math.max(0, Math.min(a, b));
   const end = Math.min(numLEDs - 1, Math.max(a, b));
-  const value = hexToGRB(hex);
+  const value = packColor(hex);
   for (let i = start; i <= end; i += 1) pixelData[i] = value;
 }
 

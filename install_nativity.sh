@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # install_nativity.sh
 # Bootstrap für das Krippe-Projekt im Ordner /home/singer/led-sound-bachlauf
 # - legt Ordnerstruktur an
@@ -62,7 +62,7 @@ fi
 
 log "npm-Pakete installieren"
 cd "${APP_DIR}"
-npm install express mysql2 morgan rpi-ws281x-native onoff dayjs
+npm install express mysql2 morgan rpi-ws281x onoff dayjs
 
 log "systemd-Service installieren/aktivieren"
 if [[ -f "${SERVICE_SRC}" ]]; then
@@ -76,3 +76,4 @@ fi
 
 log "Fertig. Service-Status:"
 sudo systemctl status nativity.service --no-pager -l | sed -n '1,30p'
+
