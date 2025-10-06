@@ -72,3 +72,9 @@ sudo systemctl restart nativity
 
 
 
+
+
+
+> Hinweis: .env wird zur Laufzeit über [dotenv](https://www.npmjs.com/package/dotenv) geladen. Bitte auf dem Zielsystem einmal 
+pm install oder 
+pm ci ausführen, damit dotenv verfügbar ist.

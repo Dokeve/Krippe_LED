@@ -30,3 +30,4 @@
 3. Kalender-Serverlogik erweitern (Serien, Konflikte) und Tests ergänzen.
 4. Import/Export, Auth und Fehlerhandling einbauen.
 
+- .env-Zykluszeiten werden nun über dotenv geladen (npm install erforderlich).
