@@ -8,3 +8,4 @@ assets/audio/** filter=lfs diff=lfs merge=lfs -text
 *.md  text eol=lf
 *.json text eol=lf
 *.css text eol=lf
+* text eol=lf
