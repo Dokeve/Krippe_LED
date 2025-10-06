@@ -25,7 +25,7 @@ const rootDir = __dirname;
 
 const DEFAULT_CYCLE_SECONDS = {
   total: toInt(process.env.CYCLE_TOTAL ?? undefined, 300),
-  day: toInt(process.env.CYCLE_DAY ?? undefined, 100),
+  day: toInt(process.env.CYCLE_DAY ?? undefined, 80),
   dayNight: toInt(process.env.CYCLE_DAYNIGHT ?? undefined, 50),
   night: toInt(process.env.CYCLE_NIGHT ?? undefined, 100),
   nightDay: toInt(process.env.CYCLE_NIGHTDAY ?? undefined, 50)
