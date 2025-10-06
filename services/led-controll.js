@@ -35,13 +35,13 @@ function withinWindow(second, start, end) {
   return second >= start && second <= end;
 }
 
-function selectedIndexes(text, count) {
+function selectedIndexes(input, count) {
+  const raw = Array.isArray(input) ? input.join(',') : (input || '');
   const set = new Set();
-  (text || '')
-    .split(',')
-    .map((value) => value.trim())
+  raw.split(',')
+    .map((s) => s.trim())
     .filter(Boolean)
-    .forEach((part) => {
+    .forEach(part => {
       if (part.includes('-')) {
         const [a, b] = part.split('-').map((n) => parseInt(n, 10));
         if (!Number.isNaN(a) && !Number.isNaN(b)) {
