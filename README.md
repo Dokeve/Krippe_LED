@@ -10,6 +10,7 @@ Der aktuelle Entwicklungsstand liefert ein Express-Grundgerüst mit statischen S
   - `GET/PUT /api/audio` → `data/audio.json`
   - `GET/PUT /api/led-groups` → `data/led-groups.json`
   - `GET/PUT /api/calendar`, `POST /api/calendar/save` → `data/calendar.json`
+- `GET/POST /api/mode` → aktueller LED-Modus (on/off/auto)
   - `GET /api/list-files?path=…` (Whitelisted Audio-Verzeichnisse)
 - Scheduler (`services/scheduler.js`) pollt Kalenderdaten, schaltet LEDs (Modus an/auto) und triggert Audio-Ducking (Modul 2).
 - LED-, Audio- und Kalender-Services über File-Stores (`services/*-store.js`), `led-controll` nutzt diese Konfigurationen.
@@ -68,3 +69,4 @@ sudo systemctl restart nativity
 3. REST-APIs um Validierung, Fehlercodes, Import/Export ergänzen.
 4. Frontend mit erweiterten Statusmeldungen/Validierungen ausstatten.
 5. Dokumentation & Tests kontinuierlich nachziehen (`docs/`, `Results.md`).
+

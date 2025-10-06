@@ -2,7 +2,7 @@
 
 ## Erfüllte Randbedingungen (Stand 2025-10-03)
 - Express-Server mit statischer Auslieferung, Health-Endpoints und Morgan-Logging.
-- File-basierte REST-APIs für Audio (`/api/audio`), Kalender (`/api/calendar`), LED-Gruppen (`/api/led-groups`) sowie Dateilisten (`/api/list-files`).
+- File-basierte REST-APIs für Audio (`/api/audio`), Kalender (`/api/calendar`), LED-Gruppen (`/api/led-groups`), Modus (`/api/mode`) sowie Dateilisten (`/api/list-files`).
 - Scheduler pollt Kalenderdaten, schaltet LED-Modus und startet Audio-Ducking für Modul 2.
 - LED-/Audio-/Kalender-Konfiguration wird in `data/*.json` persistiert; Frontend ist an die APIs angebunden.
 - Systemd-/Deploy-Skripte vorhanden (`scripts/install_systemd.sh`, `systemd/nativity.service`).
@@ -29,3 +29,4 @@
 2. LED-/Audio-Szenario-Logik komplettieren (Wand-Fades, Lagerfeuer, GPIOs, LED_COUNT).
 3. Kalender-Serverlogik erweitern (Serien, Konflikte) und Tests ergänzen.
 4. Import/Export, Auth und Fehlerhandling einbauen.
+

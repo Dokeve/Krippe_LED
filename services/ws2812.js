@@ -1,57 +1,64 @@
-// services/ws2812.js
-// WS2812 über rpi-ws281x, GPIO12 (Pin 32), GND Pin 14 - Hardware bevorzugt (ES Module)
-let ws = null;
-try {
-  const mod = await import('rpi-ws281x');
-  ws = mod?.default || mod;
-} catch {
-  ws = null;
-}
-
-let active = false;
-let numLEDs = 0;
-let pixelData = null;
-const gpioPin = 12;   // GPIO12 (Pin 32)
-let brightness = 128; // 0..255
+﻿// services/ws2812.js
+// Steuerung der WS2812-LEDs über die ALT-Library `rpi-ws281x` (GRB).
+let driver = null;          // geladene rpi-ws281x Instanz
+let initialized = false;    // merkt, ob configure() bereits ausgeführt wurde
+let numLEDs = 0;            // aktuell konfigurierte LED-Anzahl
+let pixelData = null;       // gemeinsamer Pixelpuffer (Uint32Array)
+const gpioPin = 12;         // GPIO für WS2812 (Pin 32)
+let brightness = 128;       // Standardhelligkeit 0..255
 
 function hexToGRB(hex) {
   const v = parseInt((hex || '#000000').slice(1), 16) >>> 0;
   const r = (v >> 16) & 0xff;
   const g = (v >> 8) & 0xff;
   const b = v & 0xff;
-  return (g << 16) | (r << 8) | b; // WS281x erwartet GRB
+  return (g << 16) | (r << 8) | b;
+}
+
+async function loadDriver() {
+  if (driver !== null) return driver;
+  try {
+    const mod = await import('rpi-ws281x');
+    driver = mod?.default || mod;
+  } catch (err) {
+    console.warn('[WS2812] rpi-ws281x konnte nicht geladen werden – Simulation aktiv.', err?.message || err);
+    driver = false;
+  }
+  return driver;
 }
 
 export async function initLEDs(count = 1000) {
-  if (!ws) {
-    console.log('[WS2812] rpi-ws281x nicht verfuegbar - Simulation aktiv.');
+  const ws = await loadDriver();
+  if (!ws) return; // Simulation
+
+  const target = Math.max(1, Number(count) || 1);
+  if (initialized && numLEDs === target && pixelData instanceof Uint32Array) {
     return;
   }
-  numLEDs = count;
-  pixelData = new Uint32Array(numLEDs);
-  try {
-    ws.init(numLEDs, { gpioPin, brightness });
-  } catch (e) {
-    console.warn('[WS2812] Init-Optionen fehlgeschlagen:', e?.message || e);
-    ws.init(numLEDs);
-    try { ws.setBrightness?.(brightness); } catch {}
+
+  if (typeof ws.configure !== 'function') {
+    throw new Error('rpi-ws281x bietet keine configure()-Funktion (ALT-Version erforderlich)');
   }
-  active = true;
-  console.log(`[WS2812] Init: ${numLEDs} LEDs @ GPIO ${gpioPin} (Brightness ${brightness})`);
+
+  numLEDs = target;
+  pixelData = new Uint32Array(numLEDs);
+
+  ws.configure({ leds: numLEDs, gpio: gpioPin, brightness });
+  initialized = true;
+  console.log(`[WS2812] init: ${numLEDs} LEDs @ GPIO ${gpioPin} (Brightness ${brightness})`);
 }
 
-export function setPixel(i, hex) {
-  if (!ws || !active || !pixelData) return;
-  if (i < 0 || i >= numLEDs) return;
-  pixelData[i] = hexToGRB(hex);
+export function setPixel(index, hex) {
+  if (!pixelData || index < 0 || index >= numLEDs) return;
+  pixelData[index] = hexToGRB(hex);
 }
 
 export function fillRange(a, b, hex) {
-  if (!ws || !active || !pixelData) return;
-  const s = Math.max(0, Math.min(a, b));
-  const e = Math.min(numLEDs - 1, Math.max(a, b));
-  const v = hexToGRB(hex);
-  for (let i = s; i <= e; i++) pixelData[i] = v;
+  if (!pixelData) return;
+  const start = Math.max(0, Math.min(a, b));
+  const end = Math.min(numLEDs - 1, Math.max(a, b));
+  const value = hexToGRB(hex);
+  for (let i = start; i <= end; i += 1) pixelData[i] = value;
 }
 
 export function clear() {
@@ -61,28 +68,30 @@ export function clear() {
 }
 
 export function render() {
-  if (!ws || !active || !pixelData) return;
+  if (!pixelData || !initialized || !driver) return;
   try {
-    ws.render(pixelData);
-  } catch (e) {
-    console.error('[WS2812] render-Fehler:', e);
+    driver.render(pixelData);
+  } catch (error) {
+    console.error('[WS2812] render-Fehler:', error);
+  }
+}
+
+export async function shutdownLEDs() {
+  if (!initialized || !driver) return;
+  try {
+    pixelData?.fill(0);
+    render();
+    if (typeof driver.reset === 'function') {
+      driver.reset();
+    }
+  } finally {
+    initialized = false;
+    console.log('[WS2812] Shutdown abgeschlossen');
   }
 }
 
 export function getCount() {
   return numLEDs;
-}
-
-export async function shutdownLEDs() {
-  if (!ws || !active) return;
-  try {
-    pixelData?.fill(0);
-    try { ws.render(pixelData); } catch {}
-    ws.reset?.();
-  } finally {
-    active = false;
-    console.log('[WS2812] Freigegeben.');
-  }
 }
 
 export default {

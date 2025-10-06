@@ -1,43 +1,68 @@
-// services/led-controll.js
-// Letzte Änderung: 03.10.2025 17:20 Uhr (ESM-Portierung)
+﻿// services/led-controll.js
+// Steuert LED-Modus (an/aus/auto) auf Basis von Ladenkonfiguration und Szenarien.
+// Die Funktion stellt sicher, dass der WS2812-Treiber initialisiert ist, bevor Pixel beschrieben werden.
 import ws from './ws2812.js';
 import { getLedConfig } from './led-store.js';
-import { getActiveScenarioAt, lerpColor, findScenario } from './scenario-controll.js';
+import { getActiveScenarioAt, lerpColor } from './scenario-controll.js';
+import config from '../config.js';
 
-let _mode = 'auto'; // 'on' | 'off' | 'auto'
-let _tick = 0;
+let _mode = 'auto'; // gültige Werte: 'on' | 'off' | 'auto'
+let _tick = 0;      // aktuelle Sekunde im Zyklus für Modul "auto"
 
-export function setMode(m) { _mode = m; }
-export function getMode() { return _mode; }
-export function setTick(t) { _tick = t; }
-export function getTick() { return _tick; }
+export function setMode(mode) {
+  _mode = typeof mode === 'string' ? mode : 'auto';
+}
+
+export function getMode() {
+  return _mode;
+}
+
+export function setTick(tick) {
+  _tick = Number.isFinite(tick) ? tick : 0;
+}
+
+export function getTick() {
+  return _tick;
+}
+
+async function ensureInitialized() {
+  const targetCount = config.led?.count ?? 200;
+  if ((ws.count ?? 0) !== targetCount) {
+    await ws.initLEDs(targetCount);
+  }
+}
 
 function withinWindow(sec, start, end) {
-  if (isNaN(start) && isNaN(end)) return true;
-  if (!isNaN(start) && isNaN(end)) return sec >= start;
-  if (isNaN(start) && !isNaN(end)) return sec <= end;
+  if (Number.isNaN(start) && Number.isNaN(end)) return true;
+  if (!Number.isNaN(start) && Number.isNaN(end)) return sec >= start;
+  if (Number.isNaN(start) && !Number.isNaN(end)) return sec <= end;
   return sec >= start && sec <= end;
 }
 
 function selectedIndexes(text, count) {
   const set = new Set();
-  (text || '').split(',').map(s => s.trim()).filter(Boolean).forEach(part => {
-    if (part.includes('-')) {
-      const [a, b] = part.split('-').map(n => parseInt(n, 10));
-      if (!isNaN(a) && !isNaN(b)) {
-        for (let i = Math.max(1, Math.min(a, b)); i <= Math.min(count, Math.max(a, b)); i++) {
-          set.add(i - 1);
+  (text || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .forEach((part) => {
+      if (part.includes('-')) {
+        const [a, b] = part.split('-').map((n) => parseInt(n, 10));
+        if (!Number.isNaN(a) && !Number.isNaN(b)) {
+          for (let i = Math.max(1, Math.min(a, b)); i <= Math.min(count, Math.max(a, b)); i += 1) {
+            set.add(i - 1);
+          }
         }
+      } else {
+        const n = parseInt(part, 10);
+        if (!Number.isNaN(n) && n >= 1 && n <= count) set.add(n - 1);
       }
-    } else {
-      const n = parseInt(part, 10);
-      if (!isNaN(n) && n >= 1 && n <= count) set.add(n - 1);
-    }
-  });
+    });
   return Array.from(set).sort((a, b) => a - b);
 }
 
-export async function applyModuleOn(colorHex = '#ffff00') {
+export async function applyModuleOn(colorHex = '#ff0000ff') {
+  await ensureInitialized();
   const count = ws.count ?? 0;
   if (count > 0) {
     ws.fillRange(0, count - 1, colorHex);
@@ -49,14 +74,15 @@ export async function applyModuleOff() {
   ws.clear?.();
 }
 
-function colorForIndex(baseColor, colorsArray, i) {
-  if (Array.isArray(colorsArray) && colorsArray[i] && /^#[0-9a-fA-F]{6}$/.test(colorsArray[i])) {
-    return colorsArray[i];
+function colorForIndex(baseColor, colorsArray, index) {
+  if (Array.isArray(colorsArray) && colorsArray[index] && /^#[0-9a-fA-F]{6}$/.test(colorsArray[index])) {
+    return colorsArray[index];
   }
   return baseColor;
 }
 
 export async function applyModuleAuto() {
+  await ensureInitialized();
   const ledCfg = getLedConfig();
   const active = getActiveScenarioAt(getTick());
   ws.clear?.();
@@ -65,9 +91,11 @@ export async function applyModuleAuto() {
   if (ledCfg.adventActive) groups.push(...(ledCfg.advent || []));
   if (ledCfg.weihnachtActive) groups.push(...(ledCfg.weihnacht || []));
 
+  const ledCount = ws.count ?? 0;
+
   for (const sub of groups) {
     const from = Math.max(0, sub.ledFrom | 0);
-    const to = Math.min((ws.count ?? 0) - 1, sub.ledTo | 0);
+    const to = Math.min(Math.max(0, ledCount - 1), sub.ledTo | 0);
     const count = Math.max(0, sub.ledCount | 0);
     const colorDay = sub.colorDay || '#000000';
     const colorNight = sub.colorNight || '#000000';
@@ -87,10 +115,10 @@ export async function applyModuleAuto() {
 
     if (!Array.isArray(sub.scenarios) || sub.scenarios.length === 0) {
       if (perLed && perLed.length) {
-        for (let rel = 0; rel < count; rel++) {
-          const abs = from + rel;
-          if (abs >= from && abs <= to) {
-            ws.setPixel?.(abs, colorForIndex(baseColor, perLed, rel));
+        for (let rel = 0; rel < count; rel += 1) {
+          const absolute = from + rel;
+          if (absolute >= from && absolute <= to) {
+            ws.setPixel?.(absolute, colorForIndex(baseColor, perLed, rel));
           }
         }
       } else {
@@ -101,19 +129,18 @@ export async function applyModuleAuto() {
 
     let anyApplied = false;
     for (const sc of sub.scenarios) {
-      if (!sc.name) continue;
-      if (sc.name !== active.name) continue;
-      const s = parseInt(sc.start);
-      const e = parseInt(sc.end);
+      if (!sc.name || sc.name !== active.name) continue;
+      const s = parseInt(sc.start, 10);
+      const e = parseInt(sc.end, 10);
       if (!withinWindow(active.second, s, e)) continue;
 
       const sel = selectedIndexes(sc.leds || '', count);
       if (sel.length === 0) {
         if (perLed && perLed.length) {
-          for (let rel = 0; rel < count; rel++) {
-            const abs = from + rel;
-            if (abs >= from && abs <= to) {
-              ws.setPixel?.(abs, colorForIndex(baseColor, perLed, rel));
+          for (let rel = 0; rel < count; rel += 1) {
+            const absolute = from + rel;
+            if (absolute >= from && absolute <= to) {
+              ws.setPixel?.(absolute, colorForIndex(baseColor, perLed, rel));
             }
           }
         } else {
@@ -122,9 +149,9 @@ export async function applyModuleAuto() {
         anyApplied = true;
       } else {
         for (const rel of sel) {
-          const abs = from + rel;
-          if (abs >= from && abs <= to) {
-            ws.setPixel?.(abs, colorForIndex(baseColor, perLed, rel));
+          const absolute = from + rel;
+          if (absolute >= from && absolute <= to) {
+            ws.setPixel?.(absolute, colorForIndex(baseColor, perLed, rel));
           }
         }
         anyApplied = true;
@@ -132,7 +159,7 @@ export async function applyModuleAuto() {
     }
 
     if (!anyApplied) {
-      // keine Regel griff ? nichts tun (bleibt aus)
+      // Keine Regel aktiv – LEDs bleiben aus.
     }
   }
 
@@ -142,8 +169,8 @@ export async function applyModuleAuto() {
     const cols = ledCfg.lagerfeuer.colors.filter(Boolean);
     for (const sc of ledCfg.lagerfeuer.scenarios) {
       if (sc.name !== active.name) continue;
-      const s = parseInt(sc.start);
-      const e = parseInt(sc.end);
+      const s = parseInt(sc.start, 10);
+      const e = parseInt(sc.end, 10);
       if (!withinWindow(active.second, s, e)) continue;
       if (cols.length) {
         const phase = Math.floor((getTick() % cols.length));
@@ -171,4 +198,3 @@ export default {
   applyModuleOff,
   applyModuleAuto
 };
-
