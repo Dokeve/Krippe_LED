@@ -1,6 +1,5 @@
 ﻿// services/led-controll.js
-// Steuert LED-Modus (an/aus/auto) auf Basis der Konfiguration und Szenarien.
-// Initialisiert den WS281x-Treiber nur bei Bedarf für die konfigurierte LED-Anzahl.
+// Steuert den LED-Modus (An/Aus/Automatisch) anhand der Konfiguration und Szenarien.
 import ws from './ws2812.js';
 import { getLedConfig } from './led-store.js';
 import { getActiveScenarioAt, lerpColor } from './scenario-controll.js';
@@ -40,7 +39,7 @@ function selectedIndexes(text, count) {
   const set = new Set();
   (text || '')
     .split(',')
-    .map((s) => s.trim())
+    .map((value) => value.trim())
     .filter(Boolean)
     .forEach((part) => {
       if (part.includes('-')) {
@@ -51,14 +50,16 @@ function selectedIndexes(text, count) {
           }
         }
       } else {
-        const n = parseInt(part, 10);
-        if (!Number.isNaN(n) && n >= 1 && n <= count) set.add(n - 1);
+        const index = parseInt(part, 10);
+        if (!Number.isNaN(index) && index >= 1 && index <= count) {
+          set.add(index - 1);
+        }
       }
     });
   return Array.from(set).sort((a, b) => a - b);
 }
 
-export async function applyModuleOn(colorHex = '#ff0000') {
+export async function applyModuleOn(colorHex = '#ffff00') {
   await ensureInitialized();
   const count = ws.count ?? 0;
   if (count > 0) {
@@ -81,7 +82,7 @@ function colorForIndex(baseColor, colorsArray, index) {
 export async function applyModuleAuto() {
   await ensureInitialized();
   const ledCfg = getLedConfig();
-  const active = getActiveScenarioAt(getTick());
+  const scenarioInfo = getActiveScenarioAt(getTick());
   ws.clear?.();
 
   const groups = [];
@@ -90,27 +91,27 @@ export async function applyModuleAuto() {
 
   const ledCount = ws.count ?? 0;
 
-  for (const sub of groups) {
-    const from = Math.max(0, sub.ledFrom | 0);
-    const to = Math.min(Math.max(0, ledCount - 1), sub.ledTo | 0);
-    const count = Math.max(0, sub.ledCount | 0);
-    const colorDay = sub.colorDay || '#000000';
-    const colorNight = sub.colorNight || '#000000';
-    const perLed = Array.isArray(sub.colors) ? sub.colors : null;
+  for (const group of groups) {
+    const from = Math.max(0, group.ledFrom | 0);
+    const to = Math.min(Math.max(0, ledCount - 1), group.ledTo | 0);
+    const count = Math.max(0, group.ledCount | 0);
+    const colorDay = group.colorDay || '#000000';
+    const colorNight = group.colorNight || '#000000';
+    const perLed = Array.isArray(group.colors) ? group.colors : null;
 
     let baseColor = colorDay;
-    if (active.name === 'Nacht') baseColor = colorNight;
-    if (sub.wall) {
-      if (active.name === 'Tag-Nacht') {
-        const t = active.second / active.duration;
+    if (scenarioInfo.name === 'Nacht') baseColor = colorNight;
+    if (group.wall) {
+      if (scenarioInfo.name === 'Tag-Nacht') {
+        const t = scenarioInfo.second / scenarioInfo.duration;
         baseColor = lerpColor(colorDay, colorNight, t);
-      } else if (active.name === 'Nacht-Tag') {
-        const t = active.second / active.duration;
+      } else if (scenarioInfo.name === 'Nacht-Tag') {
+        const t = scenarioInfo.second / scenarioInfo.duration;
         baseColor = lerpColor(colorNight, colorDay, t);
       }
     }
 
-    if (!Array.isArray(sub.scenarios) || sub.scenarios.length === 0) {
+    if (!Array.isArray(group.scenarios) || group.scenarios.length === 0) {
       if (perLed && perLed.length) {
         for (let rel = 0; rel < count; rel += 1) {
           const absolute = from + rel;
@@ -125,14 +126,14 @@ export async function applyModuleAuto() {
     }
 
     let anyApplied = false;
-    for (const sc of sub.scenarios) {
-      if (!sc.name || sc.name !== active.name) continue;
-      const s = parseInt(sc.start, 10);
-      const e = parseInt(sc.end, 10);
-      if (!withinWindow(active.second, s, e)) continue;
+    for (const scenario of group.scenarios) {
+      if (!scenario.name || scenario.name !== scenarioInfo.name) continue;
+      const start = parseInt(scenario.start, 10);
+      const end = parseInt(scenario.end, 10);
+      if (!withinWindow(scenarioInfo.second, start, end)) continue;
 
-      const sel = selectedIndexes(sc.leds || '', count);
-      if (sel.length === 0) {
+      const selection = selectedIndexes(scenario.leds || '', count);
+      if (selection.length === 0) {
         if (perLed && perLed.length) {
           for (let rel = 0; rel < count; rel += 1) {
             const absolute = from + rel;
@@ -145,7 +146,7 @@ export async function applyModuleAuto() {
         }
         anyApplied = true;
       } else {
-        for (const rel of sel) {
+        for (const rel of selection) {
           const absolute = from + rel;
           if (absolute >= from && absolute <= to) {
             ws.setPixel?.(absolute, colorForIndex(baseColor, perLed, rel));
@@ -163,15 +164,15 @@ export async function applyModuleAuto() {
   if (ledCfg.lagerfeuer && ledCfg.lagerfeuer.colors && ledCfg.lagerfeuer.scenarios) {
     const from = ledCfg.lagerfeuer.ledFrom | 0;
     const to = ledCfg.lagerfeuer.ledTo | 0;
-    const cols = ledCfg.lagerfeuer.colors.filter(Boolean);
-    for (const sc of ledCfg.lagerfeuer.scenarios) {
-      if (sc.name !== active.name) continue;
-      const s = parseInt(sc.start, 10);
-      const e = parseInt(sc.end, 10);
-      if (!withinWindow(active.second, s, e)) continue;
-      if (cols.length) {
-        const phase = Math.floor((getTick() % cols.length));
-        ws.fillRange(from, to, cols[phase]);
+    const colors = ledCfg.lagerfeuer.colors.filter(Boolean);
+    for (const scenario of ledCfg.lagerfeuer.scenarios) {
+      if (scenario.name !== scenarioInfo.name) continue;
+      const start = parseInt(scenario.start, 10);
+      const end = parseInt(scenario.end, 10);
+      if (!withinWindow(scenarioInfo.second, start, end)) continue;
+      if (colors.length) {
+        const phase = Math.floor((getTick() % colors.length));
+        ws.fillRange(from, to, colors[phase]);
       }
     }
   }

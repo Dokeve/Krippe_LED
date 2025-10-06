@@ -1,45 +1,47 @@
 ﻿// services/scheduler.js
 // Zentraler Scheduler – nutzt File-Stores (Kalender/LED/Audio)
-import config from '../config.js';
 import { getCalendarEvents } from './calendar-store.js';
 import * as ledControll from './led-controll.js';
 import ws2812 from './ws2812.js';
 import audioScenario from './audio-scenario.js';
+import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
 
 const POLL_INTERVAL_MS = 5000;
-const TOTAL_CYCLE = Number(config.scheduler?.cycleSeconds?.total ?? 300) || 300;
+const TOTAL_CYCLE = totalCycleSeconds();
 let timer = null;
-let lastModule = null; // '1' | '2' | null
+let lastModule = null;      // '1' | '2' | null
+let lastLogModule = null;
+let lastLogScenario = null;
 
 async function ensureLedsInitialized() {
   try {
-    await ws2812.initLEDs?.(config.led?.count ?? 200);
-  } catch (e) {
-    console.warn('[scheduler] LED-Init fehlgeschlagen:', e?.message || e);
+    await ws2812.initLEDs();
+  } catch (error) {
+    console.warn('[scheduler] LED-Init fehlgeschlagen:', error?.message || error);
   }
 }
 
 function findActiveEvent(now) {
   const events = getCalendarEvents();
   let active = null;
-  for (const ev of events) {
-    const start = new Date(ev.start);
-    const end = ev.end ? new Date(ev.end) : start;
+  for (const event of events) {
+    const start = new Date(event.start);
+    const end = event.end ? new Date(event.end) : start;
     if (Number.isNaN(start.getTime())) continue;
     if (start <= now && now <= end) {
       if (!active || new Date(active.start) < start) {
-        active = ev;
+        active = event;
       }
     }
   }
   return active;
 }
 
-function resolveModule(ev) {
-  if (!ev) return null;
-  const module = ev.module || ev.moduleId;
+function resolveModule(event) {
+  if (!event) return null;
+  const module = event.module || event.moduleId;
   if (module === '1' || module === '2') return module;
-  const title = String(ev.title || '').toLowerCase();
+  const title = String(event.title || '').toLowerCase();
   if (title.includes('modul 2')) return '2';
   if (title.includes('modul 1')) return '1';
   return null;
@@ -54,12 +56,27 @@ function computeSecondInCycle(event, now) {
   return diff % TOTAL_CYCLE;
 }
 
+function logPhase(moduleId, scenario) {
+  const scenarioName = scenario?.name ?? 'n/a';
+  if (lastLogModule === moduleId && lastLogScenario === scenarioName) {
+    return;
+  }
+  const detail = scenario ? `${scenario.name} (${scenario.second}/${scenario.duration}s)` : 'kein Szenario';
+  console.log(`[scheduler] Modul ${moduleId ?? 'none'} – ${detail}`);
+  lastLogModule = moduleId ?? null;
+  lastLogScenario = scenarioName;
+}
+
 async function applyModuleNone() {
-  if (lastModule === null) return;
+  if (lastModule === null) {
+    logPhase(null, null);
+    return;
+  }
   ledControll.setMode('off');
   await ledControll.applyModuleOff();
   audioScenario.stopBackground();
   lastModule = null;
+  logPhase(null, null);
 }
 
 async function applyModule1() {
@@ -69,16 +86,19 @@ async function applyModule1() {
     await ledControll.apply();
     audioScenario.stopBackground();
     lastModule = '1';
+    logPhase('1', null);
   }
 }
 
 async function applyModule2(secondInCycle) {
   await ensureLedsInitialized();
+  const scenario = getActiveScenarioAt(secondInCycle);
   ledControll.setMode('auto');
   ledControll.setTick(secondInCycle);
   await ledControll.apply();
   await audioScenario.tickAudio(secondInCycle);
   lastModule = '2';
+  logPhase('2', scenario);
 }
 
 async function tick() {
@@ -100,8 +120,8 @@ async function tick() {
     } else {
       await applyModuleNone();
     }
-  } catch (e) {
-    console.error('[scheduler] Tick-Fehler:', e?.message || e);
+  } catch (error) {
+    console.error('[scheduler] Tick-Fehler:', error?.message || error);
   }
 }
 
@@ -123,3 +143,4 @@ export default {
   start: startScheduler,
   stop: stopScheduler
 };
+
