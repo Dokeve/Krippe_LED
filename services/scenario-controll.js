@@ -35,6 +35,7 @@ export function lerpColor(hexA, hexB, t) {
   return `#${rr}${rg}${rb}`;
 }
 
-export { findScenario };
+export { findScenario, totalCycleSeconds };
 
-export default { getActiveScenarioAt, lerpColor, findScenario };
+export default { getActiveScenarioAt, lerpColor, findScenario, totalCycleSeconds };
+

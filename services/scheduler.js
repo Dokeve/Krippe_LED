@@ -1,5 +1,6 @@
 ﻿// services/scheduler.js
 // Zentraler Scheduler – nutzt File-Stores (Kalender/LED/Audio)
+import config from '../config.js';
 import { getCalendarEvents } from './calendar-store.js';
 import * as ledControll from './led-controll.js';
 import ws2812 from './ws2812.js';
@@ -7,7 +8,6 @@ import audioScenario from './audio-scenario.js';
 import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
 
 const POLL_INTERVAL_MS = 5000;
-const TOTAL_CYCLE = totalCycleSeconds();
 let timer = null;
 let lastModule = null;      // '1' | '2' | null
 let lastLogModule = null;
@@ -15,7 +15,7 @@ let lastLogScenario = null;
 
 async function ensureLedsInitialized() {
   try {
-    await ws2812.initLEDs();
+    await ws2812.initLEDs(config.led.count);
   } catch (error) {
     console.warn('[scheduler] LED-Init fehlgeschlagen:', error?.message || error);
   }
@@ -52,8 +52,9 @@ function computeSecondInCycle(event, now) {
   const start = new Date(event.start);
   if (Number.isNaN(start.getTime())) return 0;
   const diff = Math.max(0, Math.floor((now - start) / 1000));
-  if (TOTAL_CYCLE <= 0) return diff;
-  return diff % TOTAL_CYCLE;
+  const total = totalCycleSeconds();
+  if (total <= 0) return diff;
+  return diff % total;
 }
 
 function logPhase(moduleId, scenario) {
@@ -129,6 +130,7 @@ export async function startScheduler() {
   if (timer) return;
   timer = setInterval(tick, POLL_INTERVAL_MS);
   console.log('[scheduler] gestartet (Polling %d ms)', POLL_INTERVAL_MS);
+  console.log('[scheduler] Zyklusgesamt', totalCycleSeconds(), 'Sekunden', config.scheduler?.cycleSeconds);
 }
 
 export async function stopScheduler() {
@@ -143,4 +145,3 @@ export default {
   start: startScheduler,
   stop: stopScheduler
 };
-
