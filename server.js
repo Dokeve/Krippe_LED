@@ -52,7 +52,14 @@ if (config.logging?.morganEnabled) {
 }
 // Static (Frontend)
 if (fs.existsSync(config.paths.public)) {
-  app.use(express.static(config.paths.public));
+  app.use(express.static(config.paths.public, {
+    etag: false,
+    lastModified: false,
+    maxAge: 0,
+    setHeaders(res) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    }
+  }));
 }
 
 // Immer da: schlanker Healthcheck
@@ -138,7 +145,5 @@ process.on('uncaughtException', (err) => console.error('[uncaughtException]', er
 
 // Optional für Tests
 export default app;
-
-
 
 

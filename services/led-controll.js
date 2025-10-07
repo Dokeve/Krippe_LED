@@ -95,14 +95,6 @@ async function renderFrame(frameInput) {
     return;
   }
 
-  if (frame.every((color) => color === LED_OFF)) {
-    ws.clear?.();
-    lastFrame = frame.slice();
-    return;
-  }
-
-  ws.clear?.();
-
   let start = 0;
   while (start < frame.length) {
     const color = frame[start];
@@ -111,13 +103,11 @@ async function renderFrame(frameInput) {
       end += 1;
     }
 
-    if (color !== LED_OFF) {
-      if (typeof ws.fillRange === 'function') {
-        ws.fillRange(start, end, color);
-      } else {
-        for (let index = start; index <= end; index += 1) {
-          ws.setPixel?.(index, color);
-        }
+    if (typeof ws.fillRange === 'function') {
+      ws.fillRange(start, end, color);
+    } else {
+      for (let index = start; index <= end; index += 1) {
+        ws.setPixel?.(index, color);
       }
     }
 
