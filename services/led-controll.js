@@ -1,15 +1,23 @@
-﻿// services/led-controll.js
+// services/led-controll.js
 // Steuert den LED-Modus (An/Aus/Automatisch) anhand der Konfiguration und Szenarien.
 import ws from './ws2812.js';
 import { getLedConfig } from './led-store.js';
 import { getActiveScenarioAt, lerpColor } from './scenario-controll.js';
 import config from '../config.js';
 
+const LED_OFF = '#000000';
+
 let currentMode = 'auto';
 let currentTick = 0;
+let lastFrame = null;
 
 export function setMode(mode) {
-  currentMode = typeof mode === 'string' ? mode : 'auto';
+  const normalized = typeof mode === 'string' ? mode.toLowerCase() : 'auto';
+  const next = normalized === 'on' || normalized === 'off' || normalized === 'auto' ? normalized : 'auto';
+  if (next !== currentMode) {
+    currentMode = next;
+    invalidateCache();
+  }
 }
 
 export function getMode() {
@@ -24,34 +32,131 @@ export function getTick() {
   return currentTick;
 }
 
-async function ensureInitialized() {
+function sanitizeHex(hex, fallback = LED_OFF) {
+  if (typeof hex !== 'string') return fallback;
+  const value = hex.trim();
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value.toUpperCase() : fallback;
+}
+
+function clamp01(value) {
+  if (!Number.isFinite(value)) return 0;
+  if (value <= 0) return 0;
+  if (value >= 1) return 1;
+  return value;
+}
+
+function paletteColor(palette, progress, fromColor, toColor) {
+  const start = sanitizeHex(fromColor, LED_OFF);
+  const end = sanitizeHex(toColor, start);
+  const colors = Array.isArray(palette) ? palette.filter((hex) => /^#[0-9a-fA-F]{6}$/.test(hex)) : [];
+  if (colors.length < 2) {
+    return lerpColor(start, end, clamp01(progress));
+  }
+  const clamped = clamp01(progress);
+  const steps = colors.length - 1;
+  const scaled = clamped * steps;
+  const index = Math.min(steps - 1, Math.floor(scaled));
+  const localT = clamp01(scaled - index);
+  const segmentStart = sanitizeHex(colors[index], start);
+  const segmentEnd = sanitizeHex(colors[index + 1] || segmentStart, segmentStart);
+  return lerpColor(segmentStart, segmentEnd, localT);
+}
+
+function invalidateCache() {
+  lastFrame = null;
+}
+
+async function getLedCount() {
   await ws.initLEDs(config.led.count);
+  return ws.count ?? config.led.count ?? 0;
+}
+
+function ensureFrameSize(frame, count) {
+  const base = Array.isArray(frame) ? frame.slice(0, count) : [];
+  while (base.length < count) base.push(LED_OFF);
+  return base;
+}
+
+function framesEqual(a, b) {
+  if (a === b) return true;
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+async function renderFrame(frameInput) {
+  const ledCount = await getLedCount();
+  const frame = ensureFrameSize(frameInput, ledCount).map((color) => sanitizeHex(color, LED_OFF));
+
+  if (framesEqual(lastFrame, frame)) {
+    return;
+  }
+
+  if (frame.every((color) => color === LED_OFF)) {
+    ws.clear?.();
+    lastFrame = frame.slice();
+    return;
+  }
+
+  ws.clear?.();
+
+  let start = 0;
+  while (start < frame.length) {
+    const color = frame[start];
+    let end = start;
+    while (end + 1 < frame.length && frame[end + 1] === color) {
+      end += 1;
+    }
+
+    if (color !== LED_OFF) {
+      if (typeof ws.fillRange === 'function') {
+        ws.fillRange(start, end, color);
+      } else {
+        for (let index = start; index <= end; index += 1) {
+          ws.setPixel?.(index, color);
+        }
+      }
+    }
+
+    start = end + 1;
+  }
+
+  ws.render?.();
+  lastFrame = frame.slice();
 }
 
 function withinWindow(second, start, end) {
-  if (Number.isNaN(start) && Number.isNaN(end)) return true;
-  if (!Number.isNaN(start) && Number.isNaN(end)) return second >= start;
-  if (Number.isNaN(start) && !Number.isNaN(end)) return second <= end;
+  const hasStart = Number.isFinite(start);
+  const hasEnd = Number.isFinite(end);
+  if (!hasStart && !hasEnd) return true;
+  if (hasStart && !hasEnd) return second >= start;
+  if (!hasStart && hasEnd) return second <= end;
   return second >= start && second <= end;
 }
 
-function selectedIndexes(input, count) {
-  const raw = Array.isArray(input) ? input.join(',') : (input || '');
+function selectedIndexes(selection, total) {
+  const raw = Array.isArray(selection) ? selection.join(',') : selection || '';
   const set = new Set();
-  raw.split(',')
-    .map((s) => s.trim())
+  raw
+    .split(',')
+    .map((value) => value.trim())
     .filter(Boolean)
-    .forEach(part => {
+    .forEach((part) => {
       if (part.includes('-')) {
         const [a, b] = part.split('-').map((n) => parseInt(n, 10));
         if (!Number.isNaN(a) && !Number.isNaN(b)) {
-          for (let i = Math.max(1, Math.min(a, b)); i <= Math.min(count, Math.max(a, b)); i += 1) {
-            set.add(i - 1);
+          const start = Math.max(1, Math.min(a, b));
+          const end = Math.min(total, Math.max(a, b));
+          for (let value = start; value <= end; value += 1) {
+            set.add(value - 1);
           }
         }
       } else {
         const index = parseInt(part, 10);
-        if (!Number.isNaN(index) && index >= 1 && index <= count) {
+        if (!Number.isNaN(index) && index >= 1 && index <= total) {
           set.add(index - 1);
         }
       }
@@ -59,125 +164,137 @@ function selectedIndexes(input, count) {
   return Array.from(set).sort((a, b) => a - b);
 }
 
-export async function applyModuleOn(colorHex = '#ffff00') {
-  await ensureInitialized();
-  const count = ws.count ?? 0;
-  if (count > 0) {
-    ws.fillRange(0, count - 1, colorHex);
-    ws.render();
+function colorForIndex(baseColor, perLed, index) {
+  if (Array.isArray(perLed) && perLed[index] && /^#[0-9a-fA-F]{6}$/.test(perLed[index])) {
+    return sanitizeHex(perLed[index], baseColor);
   }
+  return sanitizeHex(baseColor);
+}
+
+function applyRangeToFrame(frame, from, to, baseColor, perLed) {
+  const start = Math.max(0, Math.min(from, to));
+  const end = Math.min(frame.length - 1, Math.max(from, to));
+  if (start > end) return;
+
+  if (Array.isArray(perLed) && perLed.length > 0) {
+    for (let offset = 0; offset <= end - start; offset += 1) {
+      const absolute = start + offset;
+      frame[absolute] = colorForIndex(baseColor, perLed, offset);
+    }
+    return;
+  }
+
+  const color = sanitizeHex(baseColor, LED_OFF);
+  for (let index = start; index <= end; index += 1) {
+    frame[index] = color;
+  }
+}
+
+export async function applyModuleOn(colorHex = '#FFFF00') {
+  const count = await getLedCount();
+  const color = sanitizeHex(colorHex, '#FFFF00');
+  await renderFrame(new Array(count).fill(color));
 }
 
 export async function applyModuleOff() {
-  ws.clear?.();
-}
-
-function colorForIndex(baseColor, colorsArray, index) {
-  if (Array.isArray(colorsArray) && colorsArray[index] && /^#[0-9a-fA-F]{6}$/.test(colorsArray[index])) {
-    return colorsArray[index];
-  }
-  return baseColor;
+  const count = await getLedCount();
+  await renderFrame(new Array(count).fill(LED_OFF));
 }
 
 export async function applyModuleAuto() {
-  await ensureInitialized();
+  const ledCount = await getLedCount();
+  if (ledCount <= 0) {
+    ws.clear?.();
+    lastFrame = [];
+    return;
+  }
+
   const ledCfg = getLedConfig();
   const scenarioInfo = getActiveScenarioAt(getTick());
-  ws.clear?.();
+  const frame = new Array(ledCount).fill(LED_OFF);
+  const transitions = ledCfg.transitions || {};
+  const dayNightPalette = Array.isArray(transitions.dayNight) ? transitions.dayNight : [];
+  const nightDayPalette = Array.isArray(transitions.nightDay) ? transitions.nightDay : [];
 
   const groups = [];
   if (ledCfg.adventActive) groups.push(...(ledCfg.advent || []));
   if (ledCfg.weihnachtActive) groups.push(...(ledCfg.weihnacht || []));
 
-  const ledCount = ws.count ?? 0;
-
   for (const group of groups) {
     const from = Math.max(0, group.ledFrom | 0);
-    const to = Math.min(Math.max(0, ledCount - 1), group.ledTo | 0);
+    const to = Math.min(ledCount - 1, group.ledTo | 0);
     const count = Math.max(0, group.ledCount | 0);
-    const colorDay = group.colorDay || '#000000';
-    const colorNight = group.colorNight || '#000000';
+    if (from > to || count <= 0) continue;
+
     const perLed = Array.isArray(group.colors) ? group.colors : null;
+    const dayColor = sanitizeHex(group.colorDay || LED_OFF, LED_OFF);
+    const nightColor = sanitizeHex(group.colorNight || LED_OFF, LED_OFF);
+    let baseColor = dayColor;
 
-    let baseColor = colorDay;
-    if (scenarioInfo.name === 'Nacht') baseColor = colorNight;
-    if (group.wall) {
-      if (scenarioInfo.name === 'Tag-Nacht') {
-        const t = scenarioInfo.second / scenarioInfo.duration;
-        baseColor = lerpColor(colorDay, colorNight, t);
-      } else if (scenarioInfo.name === 'Nacht-Tag') {
-        const t = scenarioInfo.second / scenarioInfo.duration;
-        baseColor = lerpColor(colorNight, colorDay, t);
-      }
-    }
-
-    if (!Array.isArray(group.scenarios) || group.scenarios.length === 0) {
-      if (perLed && perLed.length) {
-        for (let rel = 0; rel < count; rel += 1) {
-          const absolute = from + rel;
-          if (absolute >= from && absolute <= to) {
-            ws.setPixel?.(absolute, colorForIndex(baseColor, perLed, rel));
-          }
-        }
-      } else {
-        ws.fillRange(from, to, baseColor);
-      }
+    if (group.alwaysOn) {
+      applyRangeToFrame(frame, from, to, dayColor, null);
       continue;
     }
 
-    let anyApplied = false;
+    if (scenarioInfo.name === 'Nacht') {
+      baseColor = nightColor;
+    } else if (group.wall && scenarioInfo.name === 'Tag-Nacht') {
+      const mix = scenarioInfo.duration > 0 ? scenarioInfo.second / scenarioInfo.duration : 0;
+      baseColor = paletteColor(dayNightPalette, mix, dayColor, nightColor);
+    } else if (group.wall && scenarioInfo.name === 'Nacht-Tag') {
+      const mix = scenarioInfo.duration > 0 ? scenarioInfo.second / scenarioInfo.duration : 0;
+      baseColor = paletteColor(nightDayPalette, mix, nightColor, dayColor);
+    }
+
+    if (!Array.isArray(group.scenarios) || group.scenarios.length === 0) {
+      applyRangeToFrame(frame, from, to, baseColor, perLed);
+      continue;
+    }
+
+    let applied = false;
     for (const scenario of group.scenarios) {
-      if (!scenario.name || scenario.name !== scenarioInfo.name) continue;
+      if (!scenario || scenario.name !== scenarioInfo.name) continue;
       const start = parseInt(scenario.start, 10);
       const end = parseInt(scenario.end, 10);
       if (!withinWindow(scenarioInfo.second, start, end)) continue;
 
-      const selection = selectedIndexes(scenario.leds || '', count);
-      if (selection.length === 0) {
-        if (perLed && perLed.length) {
-          for (let rel = 0; rel < count; rel += 1) {
-            const absolute = from + rel;
-            if (absolute >= from && absolute <= to) {
-              ws.setPixel?.(absolute, colorForIndex(baseColor, perLed, rel));
-            }
-          }
-        } else {
-          ws.fillRange(from, to, baseColor);
-        }
-        anyApplied = true;
+      const selected = selectedIndexes(scenario.leds || '', count);
+      if (selected.length === 0) {
+        applyRangeToFrame(frame, from, to, baseColor, perLed);
       } else {
-        for (const rel of selection) {
+        for (const rel of selected) {
           const absolute = from + rel;
-          if (absolute >= from && absolute <= to) {
-            ws.setPixel?.(absolute, colorForIndex(baseColor, perLed, rel));
+          if (absolute >= from && absolute <= to && absolute < frame.length) {
+            frame[absolute] = colorForIndex(baseColor, perLed, rel);
           }
         }
-        anyApplied = true;
       }
+
+      applied = true;
     }
 
-    if (!anyApplied) {
-      // Keine Regel aktiv – LEDs bleiben aus.
+    if (!applied) {
+      // Keine Regel aktiv -> Segment bleibt dunkel.
     }
   }
 
-  if (ledCfg.lagerfeuer && ledCfg.lagerfeuer.colors && ledCfg.lagerfeuer.scenarios) {
-    const from = ledCfg.lagerfeuer.ledFrom | 0;
-    const to = ledCfg.lagerfeuer.ledTo | 0;
-    const colors = ledCfg.lagerfeuer.colors.filter(Boolean);
-    for (const scenario of ledCfg.lagerfeuer.scenarios) {
-      if (scenario.name !== scenarioInfo.name) continue;
-      const start = parseInt(scenario.start, 10);
-      const end = parseInt(scenario.end, 10);
-      if (!withinWindow(scenarioInfo.second, start, end)) continue;
-      if (colors.length) {
-        const phase = Math.floor((getTick() % colors.length));
-        ws.fillRange(from, to, colors[phase]);
+  const fire = ledCfg.lagerfeuer;
+  if (fire && Array.isArray(fire.colors) && Array.isArray(fire.scenarios)) {
+    const colors = fire.colors.filter((value) => /^#[0-9a-f]{6}$/i.test(value));
+    if (colors.length > 0) {
+      for (const scenario of fire.scenarios) {
+        if (!scenario || scenario.name !== scenarioInfo.name) continue;
+        const start = parseInt(scenario.start, 10);
+        const end = parseInt(scenario.end, 10);
+        if (!withinWindow(scenarioInfo.second, start, end)) continue;
+
+        const phase = colors.length > 0 ? Math.floor(getTick() % colors.length) : 0;
+        applyRangeToFrame(frame, fire.ledFrom | 0, fire.ledTo | 0, colors[phase], null);
       }
     }
   }
 
-  ws.render?.();
+  await renderFrame(frame);
 }
 
 export async function apply() {

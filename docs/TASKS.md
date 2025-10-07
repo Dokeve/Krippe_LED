@@ -1,29 +1,30 @@
-﻿# TASKS (Nächste Schritte)
+# TASKS (Naechste Schritte)
 
-## Hohe Priorität
+## Hohe Prioritaet
 
 - **LED-Hardware in Betrieb nehmen**
-  - WS2812 real testen (Init, Modus „An“ vs. „Automatisch“, Lagerfeuer-Platzhalter überprüfen).
-  - GPIOs prüfen: Pumpenrelais, Audio-Button, Helligkeit/LED_COUNT an echte Werte anpassen.
+  - WS2812 real testen (Init, Modus "An" vs. "Automatisch", Lagerfeuer-Platzhalter pruefen).
+  - GPIOs pruefen: Pumpenrelais, Audio-Button, Helligkeit/LED_COUNT an echte Werte anpassen.
+  - [x] Auto-Modus entprellt (nur bei Zustandswechsel wird erneut gerendert).
 - **Persistenz/DB**
   - MariaDB-Schema finalisieren (Settings, Audio, LED, Kalender).
   - DAO/Query-Schicht implementieren; File-Store als Fallback behalten.
 
-## Mittlere Priorität
+## Mittlere Prioritaet
 
 - **LED-/Audio-Steuerung**
   - LED-Gruppenlogik (Farben, Wand/Szenarien, Lagerfeuer) in `led-controll` erweitern.
-  - Audio-Ducking und Sprachclips sauber mit Kalender/Modul-Logik verknüpfen.
+  - Audio-Ducking und Sprachclips sauber mit Kalender/Modul-Logik verknuepfen.
 - **Kalender-Serverlogik**
   - Serientermine serverseitig expandieren, angrenzende Termine priorisieren.
-  - Konfliktauflösung und Plausibilitäts-Checks implementieren.
+  - Konfliktaufloesung und Plausibilitaets-Checks implementieren.
 - **REST-Erweiterungen**
-  - Import/Export-Endpoints, Auth (API-Key o. Ä.), Fehlerrückgaben verbessern.
+  - Import/Export-Endpoints, Auth (API-Key o.ae.), Fehlerrueckgaben verbessern.
 - **Frontend & Tests**
   - UI-Feedback (Speichererfolg/Fehler), Validierungen.
-  - Unit-/Integrationstests für Stores, Scheduler, Routen.
+  - Unit-/Integrationstests fuer Stores, Scheduler, Routen.
 
-## Niedrige Priorität
+## Niedrige Prioritaet
 
 - **Globaler Footer**
-  - Einheitliche Fußzeile mit „Letzte Änderung“ auf allen Seiten einbauen.
+  - Einheitliche Fusszeile mit "Letzte Aenderung" auf allen Seiten einbauen.

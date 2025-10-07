@@ -1,5 +1,5 @@
-﻿// services/audio-scenario.js
-// Audio-Steuerung (Ducking, Sprachclips) – nutzt audio-store statt DB
+// services/audio-scenario.js
+// Audio-Steuerung (Ducking, Sprachclips) - nutzt audio-store statt DB
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { getAudioConfig } from './audio-store.js';
@@ -10,94 +10,140 @@ const require = createRequire(import.meta.url);
 
 let player = null;
 try {
-  player = require('play-sound')({});
-} catch {
-  console.warn('[SIMULATION] Audio-Player nicht verfügbar – Audio wird simuliert');
+  player = require('play-sound')({ player: 'mpg123' });
+} catch (error) {
+  console.warn('[Audio] play-sound/mpg123 nicht verfuegbar - Audio wird simuliert:', error?.message || error);
 }
 
 const AUDIO_ROOT = config.paths?.audioRoot ?? path.join(process.cwd(), 'audio');
 const AUDIO_BACKGROUND_DIR = config.paths?.audioBgm ?? path.join(AUDIO_ROOT, 'Hintergrundmusik');
-const AUDIO_SPEECH_DIR = config.paths?.audioSpeech ?? path.join(AUDIO_ROOT, 'Audioprachdateien');
+const AUDIO_SPEECH_DIR = config.paths?.audioSpeech ?? path.join(AUDIO_ROOT, 'Audiosprachdateien');
 
 let bgCurrent = null;
+let bgProcess = null;
+let speechProcess = null;
 let speechLock = false;
+
+const clampVolume = (value) => Math.max(0, Math.min(100, Math.round(value)));
+const mpgArgs = (volume) => ['--scale', String(clampVolume(volume)), '-q'];
+
+const playFile = (filePath, volume, tag) => {
+  if (!player) {
+    console.log('[SIMULATION]', tag, filePath, 'vol', volume);
+    return null;
+  }
+  try {
+    return player.play(filePath, { mpg123: mpgArgs(volume) }, (error) => {
+      if (error) {
+        console.error(`[Audio] ${tag} Fehler:`, error.message || error);
+      }
+    });
+  } catch (error) {
+    console.error(`[Audio] ${tag} Start fehlgeschlagen:`, error.message || error);
+    return null;
+  }
+};
+
+function fullPath(base, relative) {
+  if (!relative) return null;
+  if (path.isAbsolute(relative)) return relative;
+  return path.join(base, relative);
+}
+
+export function playBackground(file, volume = 100) {
+  const resolved = fullPath(AUDIO_BACKGROUND_DIR, file);
+  if (!resolved) return;
+  if (bgCurrent === resolved && bgProcess) return;
+
+  stopBackground();
+  const child = playFile(resolved, volume, 'Hintergrundmusik');
+  if (child) {
+    bgCurrent = resolved;
+    bgProcess = child;
+    child.on('close', () => {
+      if (bgProcess === child) bgProcess = null;
+      if (bgCurrent === resolved) bgCurrent = null;
+    });
+  } else if (!player) {
+    bgCurrent = resolved;
+  }
+}
+
+export function stopBackground() {
+  if (bgProcess && typeof bgProcess.kill === 'function') {
+    try {
+      bgProcess.kill();
+    } catch (error) {
+      console.error('[Audio] stopBackground kill:', error?.message || error);
+    }
+  } else if (bgCurrent && !player) {
+    console.log('[SIMULATION] Hintergrundmusik STOP');
+  }
+  bgProcess = null;
+  bgCurrent = null;
+}
+
+export function playSpeech(file, volume = 100) {
+  const resolved = fullPath(AUDIO_SPEECH_DIR, file);
+  if (!resolved) return Promise.resolve();
+
+  stopBackground();
+
+  if (!player) {
+    console.log('[SIMULATION] Sprachdatei:', resolved, 'vol', volume);
+    return new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  if (speechProcess && typeof speechProcess.kill === 'function') {
+    try {
+      speechProcess.kill();
+    } catch (error) {
+      console.error('[Audio] playSpeech kill:', error?.message || error);
+    }
+  }
+  speechProcess = null;
+
+  return new Promise((resolve) => {
+    const child = playFile(resolved, volume, 'Sprachdatei');
+    if (!child) {
+      resolve();
+      return;
+    }
+    speechProcess = child;
+    child.on('close', () => {
+      if (speechProcess === child) speechProcess = null;
+      resolve();
+    });
+  });
+}
 
 export async function tickAudio(secondInCycle) {
   const audioCfg = getAudioConfig();
   const { name } = getActiveScenarioAt(secondInCycle);
 
-  const bgMap = audioCfg.background || {};
-  const file = bgMap[name];
-  if (file && !speechLock) {
-    playBackground(file, audioCfg.volume?.background ?? 100);
-  } else if (!file) {
+  const backgroundMap = audioCfg.background || {};
+  const background = backgroundMap[name];
+  if (background && !speechLock) {
+    playBackground(background, audioCfg.volume?.background ?? 100);
+  } else if (!background) {
     stopBackground();
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const list = audioCfg.speech || [];
-  for (const s of list) {
-    if (!s.file) continue;
-    if (s.from && today < s.from) continue;
-    if (s.to && today > s.to) continue;
+  const speechEntries = audioCfg.speech || [];
+  for (const entry of speechEntries) {
+    if (!entry?.file) continue;
+    if (entry.from && today < entry.from) continue;
+    if (entry.to && today > entry.to) continue;
+
     if (!speechLock) {
       speechLock = true;
-      playSpeech(s.file, audioCfg.volume?.speech ?? 100).finally(() => { speechLock = false; });
-      break;
+      playSpeech(entry.file, audioCfg.volume?.speech ?? 100)
+        .catch((error) => console.error('[Audio] Sprachdatei Fehler:', error?.message || error))
+        .finally(() => { speechLock = false; });
     }
+    break;
   }
-}
-
-function fullPath(base, f) {
-  if (!f) return null;
-  if (path.isAbsolute(f)) return f;
-  return path.join(base, f);
-}
-
-export function playBackground(file, vol = 100) {
-  const f = fullPath(AUDIO_BACKGROUND_DIR, file);
-  if (!f) return;
-  if (!player) {
-    if (bgCurrent !== f) {
-      console.log('[SIMULATION] Hintergrundmusik:', f, 'vol', vol);
-      bgCurrent = f;
-    }
-    return;
-  }
-  if (bgCurrent === f) return;
-  stopBackground();
-  bgCurrent = f;
-  player._bg = player.play(f, { afplay: ['-v', vol / 100] }, err => {
-    if (err) console.error('BG audio error:', err.message);
-    bgCurrent = null;
-  });
-}
-
-export function stopBackground() {
-  if (player && player._bg && player._bg.kill) {
-    try { player._bg.kill(); } catch {}
-  } else if (bgCurrent) {
-    console.log('[SIMULATION] Hintergrundmusik STOP');
-  }
-  bgCurrent = null;
-}
-
-export function playSpeech(file, vol = 100) {
-  const f = fullPath(AUDIO_SPEECH_DIR, file);
-  if (!f) return Promise.resolve();
-  stopBackground();
-  if (!player) {
-    console.log('[SIMULATION] Sprachdatei:', f, 'vol', vol);
-    return new Promise(res => setTimeout(res, 2000));
-  }
-  return new Promise((resolve) => {
-    const pr = player.play(f, { afplay: ['-v', vol / 100] }, err => {
-      if (err) console.error('Speech error:', err.message);
-      resolve();
-      bgCurrent = null;
-    });
-    player._speech = pr;
-  });
 }
 
 export default { tickAudio, stopBackground, playSpeech };

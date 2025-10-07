@@ -1,25 +1,25 @@
-﻿# LED Sound Bachlauf – Steuerung & Weboberfläche
+# LED Sound Bachlauf - Steuerung & Weboberflaeche
 
-Der aktuelle Entwicklungsstand liefert ein Express-Grundgerüst mit statischen Seiten, File-basierten REST-APIs (Audio/Kalender/LED-Gruppen) und einem Scheduler, der auf Kalenderereignisse reagiert. Ziel ist ein kompletter Steuerdienst für LED-Bachlauf, Audio und Kalender auf dem Raspberry Pi.
+Der aktuelle Entwicklungsstand liefert ein Express-Grundgeruest mit statischen Seiten, file-basierten REST-APIs (Audio/Kalender/LED-Gruppen) und einem Scheduler, der auf Kalenderereignisse reagiert. Ziel ist ein kompletter Steuerdienst fuer LED-Bachlauf, Audio und Kalender auf dem Raspberry Pi.
 
 ---
 
 ## Aktueller Stand
 - Express-Server inkl. Morgan-Logging, Health-Endpunkte und dynamischem Routing (`server.js`).
-- REST-APIs (Dateibasiert, JSON in `data/`):
-  - `GET/PUT /api/audio` → `data/audio.json`
-  - `GET/PUT /api/led-groups` → `data/led-groups.json`
-  - `GET/PUT /api/calendar`, `POST /api/calendar/save` → `data/calendar.json`
-- `GET/POST /api/mode` → aktueller LED-Modus (on/off/auto)
-  - `GET /api/list-files?path=…` (Whitelisted Audio-Verzeichnisse)
-- Scheduler (`services/scheduler.js`) pollt Kalenderdaten, schaltet LEDs (Modus an/auto) und triggert Audio-Ducking (Modul 2).
-- LED-, Audio- und Kalender-Services über File-Stores (`services/*-store.js`), `led-controll` nutzt diese Konfigurationen.
+- REST-APIs (dateibasiert, JSON in `data/`):
+  - `GET/PUT /api/audio` -> `data/audio.json`
+  - `GET/PUT /api/led-groups` -> `data/led-groups.json`
+  - `GET/PUT /api/calendar`, `POST /api/calendar/save` -> `data/calendar.json`
+- `GET/POST /api/mode` -> aktueller LED-Modus (on/off/auto).
+- `GET /api/list-files?path=.` (whitelisted Audio-Verzeichnisse).
+- Scheduler (`services/scheduler.js`) pollt Kalenderdaten, schaltet LEDs (Modus an/auto) und triggert Audio-Ducking (Modul 2).
+- LED-, Audio- und Kalender-Services ueber File-Stores (`services/*-store.js`), `led-controll` nutzt diese Konfigurationen.
 - Deployment-Hilfen: `scripts/install_systemd.sh`, `systemd/nativity.service`.
 
-### Noch offen / Nächste Schritte
-- MariaDB-Integration (aktuell File-DB via JSON), Migrationen und vollständige Persistenz.
+### Noch offen / naechste Schritte
+- MariaDB-Integration (aktuell File-DB via JSON), Migrationen und vollstaendige Persistenz.
 - Erweiterte LED-/Audio-Logik (individuelle Szenarien, Lagerfeueranimation, GPIO/Pumpe-Kopplung).
-- Vollständiges Kalender-Verhalten (Serienlogik, angrenzende Termine) serverseitig prüfen.
+- Vollstaendiges Kalender-Verhalten (Serienlogik, angrenzende Termine) serverseitig pruefen.
 - Import/Export-Flows, Authentifizierung, Fehlerhandling.
 
 ---
@@ -30,7 +30,7 @@ Der aktuelle Entwicklungsstand liefert ein Express-Grundgerüst mit statischen S
 git clone <repo-url> led-sound-bachlauf
 cd led-sound-bachlauf
 
-# Abhängigkeiten installieren
+# Abhaengigkeiten installieren
 npm install
 
 # Entwicklungsstart (statische Seiten + APIs + Scheduler)
@@ -44,21 +44,21 @@ npm ci --omit=dev
 sudo ./scripts/install_systemd.sh
 sudo systemctl restart nativity
 ```
-> Hinweis: Für produktiven Einsatz sind die oben genannten offenen Punkte (DB-Anbindung, Hardware-Integration) noch umzusetzen.
+> Hinweis: Fuer produktiven Einsatz sind die oben genannten offenen Punkte (DB-Anbindung, Hardware-Integration) noch umzusetzen.
 
 ---
 
 ## Projektstruktur
 ```
 .
-├── public/           # HTML/CSS/JS-Frontend (verwendet /api/audio|calendar|led-groups|list-files)
-├── routes/           # Express-Router (audio, calendar, led-groups, list-files, health, star)
-├── services/         # LED-/Audio-/Scheduler-Logik, File-Stores
-├── scripts/          # Deployment-Skripte
-├── systemd/          # nativity.service
-├── data/             # Persistenz (audio.json, calendar.json, led-groups.json)
-├── docs/             # Status-/Subsystem-Dokumentation
-└── Grundlagen.txt    # Anforderungskatalog
+|-- public/         # HTML/CSS/JS-Frontend (nutzt /api/audio|calendar|led-groups|list-files)
+|-- routes/         # Express-Router (audio, calendar, led-groups, list-files, health, star)
+|-- services/       # LED-/Audio-/Scheduler-Logik, File-Stores
+|-- scripts/        # Deployment-Skripte
+|-- systemd/        # nativity.service
+|-- data/           # Persistenz (audio.json, calendar.json, led-groups.json)
+|-- docs/           # Status-/Subsystem-Dokumentation
+`-- Grundlagen.txt  # Anforderungskatalog
 ```
 
 ---
@@ -66,15 +66,8 @@ sudo systemctl restart nativity
 ## Weiteres Vorgehen
 1. DB-Layer auf MariaDB heben (DAO/Queries) und File-Stores als Fallback behandeln.
 2. LED-/Audio-Scheduler-Logik erweitern (Szenarien, Lagerfeuer, GPIO-Pumpe, Button).
-3. REST-APIs um Validierung, Fehlercodes, Import/Export ergänzen.
+3. REST-APIs um Validierung, Fehlercodes sowie Import/Export ergaenzen.
 4. Frontend mit erweiterten Statusmeldungen/Validierungen ausstatten.
-5. Dokumentation & Tests kontinuierlich nachziehen (`docs/`, `Results.md`).
+5. Dokumentation und Tests kontinuierlich nachziehen (`docs/`, `Results.md`).
 
-
-
-
-
-
-> Hinweis: .env wird zur Laufzeit über [dotenv](https://www.npmjs.com/package/dotenv) geladen. Bitte auf dem Zielsystem einmal 
-pm install oder 
-pm ci ausführen, damit dotenv verfügbar ist.
+> Hinweis: `.env` wird zur Laufzeit ueber [dotenv](https://www.npmjs.com/package/dotenv) geladen. Bitte auf dem Zielsystem `npm install` oder `npm ci` ausfuehren, damit `dotenv` verfuegbar ist.

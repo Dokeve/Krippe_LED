@@ -153,3 +153,52 @@ pre#log-output { white-space: pre-wrap; background: #081629; border: 1px solid v
 /* Responsiv */
 @media (max-width: 900px) { .sub-details .led-color-palette { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
 @media (max-width: 640px) { .sub-details .led-color-palette { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
+
+.transition-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 12px;
+}
+
+.transition-block {
+  flex: 1 1 280px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.transition-block h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.transition-palette {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(60px, 1fr));
+  gap: 12px;
+}
+
+.transition-palette label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.85rem;
+  gap: 6px;
+}
+
+.transition-palette input[type="color"] {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}

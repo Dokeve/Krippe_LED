@@ -4,6 +4,13 @@ import config from '../config.js';
 import { ensureDir, readJson, writeJson } from './file-utils.js';
 
 const LED_FILE = path.join(config.paths.data, 'led-groups.json');
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+const TRANSITION_COLOR_COUNT = 5;
+
+const DEFAULT_TRANSITIONS = {
+  dayNight: ['#FFF3C4', '#F7D08C', '#F0A45E', '#C9724A', '#493F66'],
+  nightDay: ['#1F2A5F', '#274C8C', '#3A7CC3', '#78B9E0', '#F2F6FF']
+};
 
 const DEFAULT_LED = {
   adventActive: false,
@@ -16,6 +23,10 @@ const DEFAULT_LED = {
     ledCount: 0,
     colors: ['#FF4500', '#FF8C00', '#FFD700', '#FFA500', '#FF6347'],
     scenarios: []
+  },
+  transitions: {
+    dayNight: DEFAULT_TRANSITIONS.dayNight.slice(),
+    nightDay: DEFAULT_TRANSITIONS.nightDay.slice()
   }
 };
 
@@ -38,6 +49,7 @@ function sanitizeSubgroup(group) {
   const ledTo = Number.isFinite(Number(group.ledTo)) ? Number(group.ledTo) : ledFrom;
   const ledCount = Number.isFinite(Number(group.ledCount)) ? Number(group.ledCount) : Math.max(0, ledTo - ledFrom + 1);
   const wall = Boolean(group.wall);
+  const alwaysOn = Boolean(group.alwaysOn);
   const colorDay = typeof group.colorDay === 'string' ? group.colorDay : '#000000';
   const colorNight = typeof group.colorNight === 'string' ? group.colorNight : '#000000';
   const individualColors = Array.isArray(group.individualColors)
@@ -52,10 +64,38 @@ function sanitizeSubgroup(group) {
     ledTo,
     ledCount,
     wall,
+    alwaysOn,
     colorDay,
     colorNight,
     individualColors,
     scenarios
+  };
+}
+
+function sanitizePalette(list, fallback) {
+  const result = [];
+  const source = Array.isArray(list) ? list : [];
+  for (let i = 0; i < TRANSITION_COLOR_COUNT; i += 1) {
+    const candidate = typeof source[i] === 'string' ? source[i].trim() : '';
+    if (HEX_COLOR.test(candidate)) {
+      result.push(candidate.toUpperCase());
+      continue;
+    }
+    const fb = Array.isArray(fallback) ? fallback[i] : null;
+    if (typeof fb === 'string' && HEX_COLOR.test(fb)) {
+      result.push(fb.toUpperCase());
+      continue;
+    }
+    result.push(result[i - 1] || '#000000');
+  }
+  return result.slice(0, TRANSITION_COLOR_COUNT);
+}
+
+function sanitizeTransitions(input) {
+  const raw = input && typeof input === 'object' ? input : {};
+  return {
+    dayNight: sanitizePalette(raw.dayNight, DEFAULT_TRANSITIONS.dayNight),
+    nightDay: sanitizePalette(raw.nightDay, DEFAULT_TRANSITIONS.nightDay)
   };
 }
 
@@ -84,7 +124,8 @@ function sanitizeConfig(input = {}) {
     weihnachtActive: Boolean(input.weihnachtActive),
     advent: sanitizeGroupList(input.advent),
     weihnacht: sanitizeGroupList(input.weihnacht),
-    lagerfeuer: sanitizeLagerfeuer(input.lagerfeuer)
+    lagerfeuer: sanitizeLagerfeuer(input.lagerfeuer),
+    transitions: sanitizeTransitions(input.transitions)
   };
 }
 
@@ -105,4 +146,3 @@ export default {
   getLedConfig,
   saveLedConfig
 };
-

@@ -27,6 +27,7 @@
           <label>LED bis: <input type="number" class="sub-led-to" min="0" /></label>
           <label>LED Anzahl: <input type="number" class="sub-led-count" min="1" /></label>
           <label>Wandbeleuchtung: <input type="checkbox" class="sub-wall" /></label>
+          <label>Dauerbeleuchtung: <input type="checkbox" class="sub-always" /></label> 
           <label>Grundfarbe Tag: <input type="color" class="sub-color-day" value="#000000" /></label>
           <label>Grundfarbe Nacht: <input type="color" class="sub-color-night" value="#000000" /></label>
           <div class="sub-actions">
@@ -108,6 +109,33 @@
         <div class="group-controls">
           <button id="save-lagerfeuer" type="button">💾 Speichern</button>
           <button id="test-lagerfeuer" type="button">▶ Testen (Simulation)</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="group-section" id="transition-settings">
+      <h2>Farbverläufe für Tag/Nacht</h2>
+      <p class="hint">Die hier gewählten Farben bestimmen den Farbverlauf in den Szenarien „Tag-Nacht“ und „Nacht-Tag“.</p>
+      <div class="transition-container">
+        <div class="transition-block" data-transition="day-night">
+          <h3>Tag → Nacht</h3>
+          <div class="transition-palette">
+            <label>#1 <input type="color" value="#fff3c4" data-index="0" /></label>
+            <label>#2 <input type="color" value="#f7d08c" data-index="1" /></label>
+            <label>#3 <input type="color" value="#f0a45e" data-index="2" /></label>
+            <label>#4 <input type="color" value="#c9724a" data-index="3" /></label>
+            <label>#5 <input type="color" value="#493f66" data-index="4" /></label>
+          </div>
+        </div>
+        <div class="transition-block" data-transition="night-day">
+          <h3>Nacht → Tag</h3>
+          <div class="transition-palette">
+            <label>#1 <input type="color" value="#1f2a5f" data-index="0" /></label>
+            <label>#2 <input type="color" value="#274c8c" data-index="1" /></label>
+            <label>#3 <input type="color" value="#3a7cc3" data-index="2" /></label>
+            <label>#4 <input type="color" value="#78b9e0" data-index="3" /></label>
+            <label>#5 <input type="color" value="#f2f6ff" data-index="4" /></label>
+          </div>
         </div>
       </div>
     </section>

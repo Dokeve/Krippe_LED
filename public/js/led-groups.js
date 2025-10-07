@@ -21,6 +21,27 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   const isHex = v => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test((v||'').trim());
 
+  function getTransitionInputs(kind) {
+    return Array.from(document.querySelectorAll(`[data-transition="${kind}"] input[type="color"]`));
+  }
+
+  function setTransitionPalette(kind, colors) {
+    const inputs = getTransitionInputs(kind);
+    inputs.forEach((input, index) => {
+      const pick = Array.isArray(colors) ? colors[index] : null;
+      if (pick && isHex(pick)) {
+        input.value = pick.toUpperCase();
+      }
+    });
+  }
+
+  function readTransitionPalette(kind) {
+    return getTransitionInputs(kind).map((input) => {
+      const value = (input?.value || '').toUpperCase();
+      return isHex(value) ? value : '';
+    });
+  }
+
   /* ------------ Szenario-UI ------------ */
   function scenarioRowTemplate() {
     const row = document.createElement('div');
@@ -106,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     q('.sub-led-to').value = data?.ledTo ?? '';
     q('.sub-led-count').value = data?.ledCount ?? '';
     q('.sub-wall').checked = !!data?.wall;
+    q('.sub-always').checked = !!data?.alwaysOn;
     q('.sub-color-day').value = isHex(data?.colorDay) ? data.colorDay : '#000000';
     q('.sub-color-night').value = isHex(data?.colorNight) ? data.colorNight : '#000000';
 
@@ -150,6 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ledTo: parseInt(get(".sub-led-to")?.value || 0, 10),
       ledCount: parseInt(get(".sub-led-count")?.value || 0, 10),
       wall: !!get(".sub-wall")?.checked,
+      alwaysOn: !!get(".sub-always")?.checked,
       colorDay: get(".sub-color-day")?.value || '#000000',
       colorNight: get(".sub-color-night")?.value || '#000000',
       scenarios: [],
@@ -212,7 +235,11 @@ document.addEventListener("DOMContentLoaded", () => {
       weihnachtActive: document.getElementById("group-weihnacht-active")?.checked || false,
       advent: readGroupUI(document.getElementById("advent-subgroups")),
       weihnacht: readGroupUI(document.getElementById("weihnacht-subgroups")),
-      lagerfeuer: readLagerfeuerUI()
+      lagerfeuer: readLagerfeuerUI(),
+      transitions: {
+        dayNight: readTransitionPalette('day-night'),
+        nightDay: readTransitionPalette('night-day')
+      }
     };
     try {
       await fetch('/api/led-groups', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
@@ -240,6 +267,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const cols = l.colors || [];
       ['#lagerfeuer-color1','#lagerfeuer-color2','#lagerfeuer-color3','#lagerfeuer-color4','#lagerfeuer-color5']
         .forEach((sel, i) => { const el = document.querySelector(sel); if (el) el.value = cols[i] || el.value; });
+
+      const transitions = cfg.transitions || {};
+      setTransitionPalette('day-night', transitions.dayNight);
+      setTransitionPalette('night-day', transitions.nightDay);
 
       log('[OK] LED-Gruppen geladen');
     } catch(e) {

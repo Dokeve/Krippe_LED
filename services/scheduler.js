@@ -7,7 +7,7 @@ import ws2812 from './ws2812.js';
 import audioScenario from './audio-scenario.js';
 import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
 
-const POLL_INTERVAL_MS = 1000;
+const POLL_INTERVAL_MS = 5000;
 let timer = null;
 let lastModule = null;      // '1' | '2' | null
 let lastLogModule = null;
