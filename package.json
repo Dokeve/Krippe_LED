@@ -1,11 +1,7 @@
 {
   "name": "led-sound-bachlauf",
   "version": "1.0.0",
-<<<<<<< Updated upstream
   "description": "Weboberflaeche zur Steuerung von LEDs, Audio und Szenarien (Krippe-Projekt).",
-<<<<<<<
-  "description": "Weboberfläche zur Steuerung von LEDs, Audio und Szenarien (Krippe-Projekt).",
-<<<<<<< Stashed changes
   "private": true,
   "type": "module",
   "main": "server.js",
