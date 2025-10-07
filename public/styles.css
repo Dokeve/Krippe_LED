@@ -94,6 +94,37 @@ details summary { cursor: pointer; font-weight: 600; }
 .scenario-row { display: grid; grid-template-columns: 180px 1fr 1fr 1.4fr auto; gap: 8px; margin: 6px 0; }
 .scenarios-controls { display:flex; justify-content: flex-end; }
 
+.group-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-header h2 {
+  margin: 0;
+}
+
+.group-body {
+  margin-top: 12px;
+}
+
+.group-body.collapsed {
+  display: none;
+}
+
+.toggle-group {
+  margin-left: auto;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+}
+
+.toggle-group:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 /* Log */
 pre#log-output { white-space: pre-wrap; background: #081629; border: 1px solid var(--border); border-radius: 8px; padding: 10px; min-height: 80px; }
 

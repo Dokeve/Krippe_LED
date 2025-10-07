@@ -21,6 +21,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   const isHex = v => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test((v||'').trim());
 
+  function updateToggleButton(button, expanded) {
+    if (!button) return;
+    button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    button.textContent = expanded ? 'Bereich einklappen' : 'Bereich anzeigen';
+  }
+
+  function toggleGroupArea(button, targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    const collapsed = target.classList.toggle('collapsed');
+    updateToggleButton(button, !collapsed);
+  }
+
   function getTransitionInputs(kind) {
     return Array.from(document.querySelectorAll(`[data-transition="${kind}"] input[type="color"]`));
   }
@@ -293,6 +306,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("save-lagerfeuer")?.addEventListener("click", saveAll);
   document.getElementById("test-lagerfeuer")?.addEventListener("click", () => log("Lagerfeuer Simulation gestartet"));
+
+  document.querySelectorAll(".toggle-group").forEach((button) => {
+    const targetId = button.dataset.target;
+    if (!targetId) return;
+    updateToggleButton(button, true);
+    button.addEventListener("click", () => toggleGroupArea(button, targetId));
+  });
 
   /* ------------ Init ------------ */
   loadAll();
