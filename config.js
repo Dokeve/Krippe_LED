@@ -41,6 +41,10 @@ const DEFAULT_AUDIO_ROOT = process.env.AUDIO_DIR
     ? '/home/singer/led-sound-bachlauf/audio'
     : join(rootDir, 'audio'));
 
+const audio = {
+  outputDevice: process.env.AUDIO_OUTPUT_DEVICE || ''
+};
+
 const paths = {
   root: rootDir,
   public: process.env.PUBLIC_DIR || join(rootDir, 'public'),
@@ -91,6 +95,7 @@ const cfg = {
   led,
   gpio,
   scheduler,
+  audio,
   paths,
   logging
 };

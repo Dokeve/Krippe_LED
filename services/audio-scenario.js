@@ -18,6 +18,7 @@ try {
 const AUDIO_ROOT = config.paths?.audioRoot ?? path.join(process.cwd(), 'audio');
 const AUDIO_BACKGROUND_DIR = config.paths?.audioBgm ?? path.join(AUDIO_ROOT, 'Hintergrundmusik');
 const AUDIO_SPEECH_DIR = config.paths?.audioSpeech ?? path.join(AUDIO_ROOT, 'Audiosprachdateien');
+const AUDIO_DEVICE = (config.audio?.outputDevice || '').trim();
 
 let bgCurrent = null;
 let bgProcess = null;
@@ -25,7 +26,14 @@ let speechProcess = null;
 let speechLock = false;
 
 const clampVolume = (value) => Math.max(0, Math.min(100, Math.round(value)));
-const mpgArgs = (volume) => ['--scale', String(clampVolume(volume)), '-q'];
+const mpgArgs = (volume) => {
+  const args = ['--scale', String(clampVolume(volume)), '-q'];
+  if (AUDIO_DEVICE) {
+    args.unshift(AUDIO_DEVICE);
+    args.unshift('-a');
+  }
+  return args;
+};
 
 const playFile = (filePath, volume, tag) => {
   if (!player) {
