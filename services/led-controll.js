@@ -127,14 +127,22 @@ function withinWindow(second, start, end) {
   return second >= start && second <= end;
 }
 
+<<<<<<< Updated upstream
 function selectedIndexes(selection, total) {
   const raw = Array.isArray(selection) ? selection.join(',') : selection || '';
   const set = new Set();
   raw
     .split(',')
     .map((value) => value.trim())
+=======
+function selectedIndexes(input, count) {
+  const raw = Array.isArray(input) ? input.join(',') : (input || '');
+  const set = new Set();
+  raw.split(',')
+    .map((s) => s.trim())
+>>>>>>> Stashed changes
     .filter(Boolean)
-    .forEach((part) => {
+    .forEach(part => {
       if (part.includes('-')) {
         const [a, b] = part.split('-').map((n) => parseInt(n, 10));
         if (!Number.isNaN(a) && !Number.isNaN(b)) {
