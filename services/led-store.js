@@ -5,11 +5,11 @@ import { ensureDir, readJson, writeJson } from './file-utils.js';
 
 const LED_FILE = path.join(config.paths.data, 'led-groups.json');
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-const TRANSITION_COLOR_COUNT = 5;
+const TRANSITION_COLOR_COUNT = 7;
 
 const DEFAULT_TRANSITIONS = {
-  dayNight: ['#FFF3C4', '#F7D08C', '#F0A45E', '#C9724A', '#493F66'],
-  nightDay: ['#1F2A5F', '#274C8C', '#3A7CC3', '#78B9E0', '#F2F6FF']
+  dayNight: ['#FFF6CF', '#FFE29A', '#FFB866', '#FF7F3F', '#D95F5F', '#8B4B7A', '#23325F'],
+  nightDay: ['#1A2747', '#21406C', '#2F64A0', '#4F8ECC', '#7EB8E4', '#B8DDF5', '#FFF5DB']
 };
 
 const DEFAULT_LED = {

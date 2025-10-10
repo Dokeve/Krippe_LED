@@ -208,7 +208,7 @@ pre#log-output { white-space: pre-wrap; background: #081629; border: 1px solid v
 
 .transition-palette {
   display: grid;
-  grid-template-columns: repeat(5, minmax(60px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
   gap: 12px;
 }
 
