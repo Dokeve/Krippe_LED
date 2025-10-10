@@ -7,7 +7,7 @@ import ws2812 from './ws2812.js';
 import audioScenario from './audio-scenario.js';
 import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_MS = 1000;
 let timer = null;
 let lastModule = null;      // '1' | '2' | null
 let lastLogModule = null;
@@ -51,7 +51,7 @@ function computeSecondInCycle(event, now) {
   if (!event) return 0;
   const start = new Date(event.start);
   if (Number.isNaN(start.getTime())) return 0;
-  const diff = Math.max(0, Math.floor((now - start) / 1000));
+  const diff = Math.max(0, (now - start) / 1000);
   const total = totalCycleSeconds();
   if (total <= 0) return diff;
   return diff % total;
@@ -145,4 +145,3 @@ export default {
   start: startScheduler,
   stop: stopScheduler
 };
-
