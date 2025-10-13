@@ -25,7 +25,7 @@ let bgProcess = null;
 let speechProcess = null;
 let speechLock = false;
 
-const clampVolume = (value) => Math.max(0, Math.min(100, Math.round(value)));
+const clampVolume = (value) => Math.max(0, Math.min(400, Math.round(value)));
 const mpgArgs = (volume) => {
   const args = ['--scale', String(clampVolume(volume)), '-q'];
   if (AUDIO_DEVICE) {
@@ -138,25 +138,57 @@ export async function tickAudio(secondInCycle) {
   const background = backgroundMap[name];
   if (background && !speechLock) {
     playBackground(background, audioCfg.volume?.background ?? 100);
-  } else if (!background) {
+  } else if (!background && bgProcess) {
     stopBackground();
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const speechEntries = audioCfg.speech || [];
-  for (const entry of speechEntries) {
-    if (!entry?.file) continue;
-    if (entry.from && today < entry.from) continue;
-    if (entry.to && today > entry.to) continue;
-
-    if (!speechLock) {
-      speechLock = true;
-      playSpeech(entry.file, audioCfg.volume?.speech ?? 100)
-        .catch((error) => console.error('[Audio] Sprachdatei Fehler:', error?.message || error))
-        .finally(() => { speechLock = false; });
-    }
-    break;
   }
 }
 
-export default { tickAudio, stopBackground, playSpeech };
+function parseIsoDate(input) {
+  if (!input) return null;
+  const date = new Date(input);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function findActiveSpeechEntry(speechList, referenceDate = new Date()) {
+  if (!Array.isArray(speechList)) return null;
+  for (const entry of speechList) {
+    if (!entry?.file) continue;
+    const from = parseIsoDate(entry.from);
+    const to = parseIsoDate(entry.to);
+    if (from && referenceDate < from) continue;
+    if (to && referenceDate > to) continue;
+    return entry;
+  }
+  return null;
+}
+
+export function isSpeechActive() {
+  return speechLock;
+}
+
+export async function triggerSpeech(secondInCycle = 0) {
+  if (speechLock) {
+    console.log('[Audio] Sprachdatei übersprungen – bereits in Wiedergabe');
+    return false;
+  }
+
+  const audioCfg = getAudioConfig();
+  const entry = findActiveSpeechEntry(audioCfg.speech, new Date());
+  if (!entry) {
+    console.log('[Audio] Keine Sprachdatei aktiv (Zeitraum außerhalb)');
+    return false;
+  }
+
+  speechLock = true;
+  try {
+    await playSpeech(entry.file, audioCfg.volume?.speech ?? 100);
+    return true;
+  } catch (error) {
+    console.error('[Audio] Sprachdatei Fehler:', error?.message || error);
+    return false;
+  } finally {
+    speechLock = false;
+  }
+}
+
+export default { tickAudio, stopBackground, playSpeech, triggerSpeech, isSpeechActive };

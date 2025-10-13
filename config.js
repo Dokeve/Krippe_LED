@@ -1,4 +1,4 @@
-﻿// config.js – zentrale Konfiguration (ESM, Node ≥ 20)
+// config.js � zentrale Konfiguration (ESM, Node = 20)
 import { fileURLToPath } from 'node:url';
 import path, { join } from 'node:path';
 import fs from 'node:fs';
@@ -84,7 +84,7 @@ const logging = {
 
 const gpio = {
   pump: toInt(process.env.PUMP_GPIO ?? undefined, 19),
-  audioButton: toInt(process.env.AUDIO_BUTTON_GPIO ?? undefined, 13)
+  audioButton: toInt(process.env.AUDIO_BUTTON_GPIO ?? undefined, 17)
 };
 
 const cfg = {

@@ -1,5 +1,5 @@
-﻿// server.js — Rahmenserver für Krippe_LED (ESM, Node = 20)
-// Lädt Router aus ./routes automatisch, liefert Health, startet optional scheduler.
+// server.js - Rahmenserver f?r Krippe_LED (ESM, Node = 20)
+// L?dt Router aus ./routes automatisch, liefert Health, startet optional scheduler.
 // Erwartete Routen-Dateien (wenn vorhanden): health.js, audio.js, calendar.js, led-groups.js, star.js
 
 import express from 'express';
@@ -9,6 +9,8 @@ import url from 'node:url';
 import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import config from './config.js';
+import { initGpio, onAudioButton } from './services/gpio.js';
+import { triggerSpeech } from './services/audio-scenario.js';
 
 // NEU: morgan robust importieren (ESM/CJS sicher)
 import morgan from 'morgan';
@@ -16,7 +18,7 @@ import morgan from 'morgan';
 const ensureDirSync = (p) => { try { fs.mkdirSync(p, { recursive: true }); } catch {} };
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.disable('x-powered-by');
@@ -34,7 +36,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// >>> NEU: morgan-Middleware einhängen
+// >>> NEU: morgan-Middleware einh?ngen
 if (config.logging?.morganEnabled) {
   const skip = (req, _res) =>
     config.logging.skipHealth && (req.path === '/health' || req.path.startsWith('/api/health'));
@@ -45,7 +47,7 @@ if (config.logging?.morganEnabled) {
     app.use(morgan(config.logging.morganFormat, { stream, skip }));
     console.log(`[morgan] to file: ${config.logging.morganFilePath} (${config.logging.morganFormat})`);
   } else {
-    // ins Journal (stdout) – systemd/journald fängt es ab
+    // ins Journal (stdout) - systemd/journald f?ngt es ab
     app.use(morgan(config.logging.morganFormat, { skip }));
     console.log(`[morgan] to journal (${config.logging.morganFormat})`);
   }
@@ -99,51 +101,69 @@ for (const { file, base } of expectedRouters) {
       app.use(base, router);
       console.log(`[router] mounted ${base} -> routes/${file}`);
     } else {
-      console.warn(`[router] routes/${file} exportiert keinen Router (default/function). übersprungen.`);
+      console.warn(`[router] routes/${file} exportiert keinen Router (default/function). ?bersprungen.`);
     }
   } else {
-    console.warn(`[router] fehlt: routes/${file} (base ${base}) – wird nicht gemountet.`);
+    console.warn(`[router] fehlt: routes/${file} (base ${base}) - wird nicht gemountet.`);
   }
 }
 
-// 404 für /api/*
+// 404 f?r /api/*
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
 });
 
-// Fallback 404 für alles andere
+// Fallback 404 f?r alles andere
 app.use((req, res) => {
   res.status(404).send('Krippe Webserver: Seite nicht gefunden.');
 });
+
+let schedulerModule = null;
 
 // Optional: Scheduler starten, falls vorhanden (start() wird aufgerufen, wenn exportiert)
 try {
   const schedPath = join(__dirname, 'services', 'scheduler.js');
   if (fs.existsSync(schedPath)) {
     const schedMod = await import(pathToFileURL(schedPath).href);
+    schedulerModule = schedMod;
     const startFn = schedMod.start ?? schedMod.startScheduler ?? schedMod.default?.start;
     if (typeof startFn === 'function') {
       await startFn({ app, config });
       console.log('[scheduler] gestartet');
     } else {
-      console.log('[scheduler] gefunden, aber keine start()-Funktion exportiert – übersprungen');
+      console.log('[scheduler] gefunden, aber keine start()-Funktion exportiert - ?bersprungen');
     }
   }
 } catch (e) {
   console.warn('[scheduler] Start fehlgeschlagen:', e.message);
 }
 
+try {
+  await initGpio();
+  onAudioButton(async () => {
+    const lastModule = schedulerModule?.getLastModule?.() ?? null;
+    if (lastModule !== '2') {
+      console.log('[GPIO] Audio-Button ignoriert (Modul', lastModule ?? 'none', ')');
+      return;
+    }
+    const triggered = await triggerSpeech();
+    console.log(triggered ? '[Audio] Sprachdatei per Button ausgelöst' : '[Audio] Button ohne aktive Sprachdatei');
+  });
+} catch (error) {
+  console.warn('[GPIO] Initialisierung fehlgeschlagen:', error?.message || error);
+}
+
 // Start
 const server = http.createServer(app);
 server.listen(config.port, () => {
-  console.log(`Server läuft auf http://localhost:${config.port}`);
+  console.log(`Server l?uft auf http://localhost:${config.port}`);
 });
 
 // Robustheit
 process.on('unhandledRejection', (err) => console.error('[unhandledRejection]', err));
 process.on('uncaughtException', (err) => console.error('[uncaughtException]', err));
 
-// Optional für Tests
+// Optional f?r Tests
 export default app;
 
 

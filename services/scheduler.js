@@ -172,3 +172,7 @@ export default {
   start: startScheduler,
   stop: stopScheduler
 };
+
+export function getLastModule() {
+  return lastModule;
+}
