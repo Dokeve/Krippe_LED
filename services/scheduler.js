@@ -1,5 +1,5 @@
-﻿// services/scheduler.js
-// Zentraler Scheduler – nutzt File-Stores (Kalender/LED/Audio)
+// services/scheduler.js
+// Zentraler Scheduler - nutzt File-Stores (Kalender/LED/Audio)
 import config from '../config.js';
 import { getCalendarEvents } from './calendar-store.js';
 import * as ledControll from './led-controll.js';
@@ -7,7 +7,7 @@ import ws2812 from './ws2812.js';
 import audioScenario from './audio-scenario.js';
 import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
 
-const POLL_INTERVAL_MS = 1000;
+const POLL_INTERVAL_MS = 500;
 let timer = null;
 let lastModule = null;      // '1' | '2' | null
 let lastLogModule = null;
@@ -63,7 +63,7 @@ function logPhase(moduleId, scenario) {
     return;
   }
   const detail = scenario ? `${scenario.name} (${scenario.second}/${scenario.duration}s)` : 'kein Szenario';
-  console.log(`[scheduler] Modul ${moduleId ?? 'none'} – ${detail}`);
+  console.log(`[scheduler] Modul ${moduleId ?? 'none'} - ${detail}`);
   lastLogModule = moduleId ?? null;
   lastLogScenario = scenarioName;
 }

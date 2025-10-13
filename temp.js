@@ -306,7 +306,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("save-lagerfeuer")?.addEventListener("click", saveAll);
   document.getElementById("test-lagerfeuer")?.addEventListener("click", () => log("Lagerfeuer Simulation gestartet"));
-  document.getElementById("save-transition-palettes")?.addEventListener("click", saveAll);
 
   document.querySelectorAll(".toggle-group").forEach((button) => {
     const targetId = button.dataset.target;
