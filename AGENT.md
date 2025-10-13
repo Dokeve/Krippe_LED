@@ -10,7 +10,7 @@
 - **REST-APIs:** `/api/audio`, `/api/led-groups`, `/api/calendar`, `/api/list-files`, `/api/health`, `/api/star`.
 - **Scheduler:** Pollt Kalenderdaten, setzt LED-Modus (`on`/`auto`) und ruft Audio-Ducking für Modul 2 auf. Zyklus 100/50/100/50 s in `config.js` hinterlegt.
 - **LED-Hardware:** WS2812 (GRB, GPIO 12, Helligkeit 128). LED-Anzahl aktuell 200 (Ziel ~1000) – Anpassung noch offen.
-- **Audio:** Hintergrundmusik/Sprachclips laut File-Konfiguration; Ducking + GPIO-Trigger (GPIO 13) vorbereitet.
+- **Audio:** Hintergrundmusik/Sprachclips laut File-Konfiguration; Ducking + GPIO-Trigger (GPIO 17) vorbereitet.
 - **Kalender:** FullCalendar-Frontend liest/schreibt über neue APIs (file-basiert). Serientermine werden clientseitig erzeugt.
 - **Deployment:** `scripts/install_systemd.sh`, `systemd/nativity.service` aktiv; alte Units deaktivieren (`led-sound-bachlauf.service`, `ledsound.service`).
 - **Repo:** GitHub `Dokeve/Krippe_LED`, Branch `develop`; Audio-Dateien via Git LFS.
@@ -52,3 +52,5 @@ sudo systemctl status nativity -n 100
 - **public/**: Statische Frontend-Seiten
 
 Siehe `Results.md` für die aktuelle Soll/Ist-Analyse.
+
+

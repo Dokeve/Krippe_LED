@@ -8,7 +8,7 @@ let audioButton = null;
 export async function initGpio() {
   try {
     const pumpPin = Number(config.gpio?.pump ?? 19);
-    const btnPin = Number(config.gpio?.audioButton ?? 4);
+    const btnPin = Number(config.gpio?.audioButton ?? 17);
 
     pump = new Gpio(pumpPin, 'out');
     audioButton = new Gpio(btnPin, 'in', 'rising', { debounceTimeout: 50 });

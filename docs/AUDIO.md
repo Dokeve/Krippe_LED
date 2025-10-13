@@ -6,5 +6,5 @@
 
 Offene Schritte:
 1. MariaDB-Anbindung (`audio_entries`), Umschalten per `USE_FILE_DB`.
-2. GPIO-Button-Trigger (GPIO 13) inklusive Debounce.
+2. GPIO-Button-Trigger (GPIO 17) inklusive Debounce.
 3. Fortschrittliche Validierung (überlappende Zeiträume, parallele Clips).
