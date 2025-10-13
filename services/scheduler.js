@@ -6,12 +6,14 @@ import * as ledControll from './led-controll.js';
 import ws2812 from './ws2812.js';
 import audioScenario from './audio-scenario.js';
 import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
+import { getMode as readPersistedMode } from './mode-store.js';
 
 const POLL_INTERVAL_MS = 500;
 let timer = null;
 let lastModule = null;      // '1' | '2' | null
 let lastLogModule = null;
 let lastLogScenario = null;
+let lastManualMode = null;
 
 async function ensureLedsInitialized() {
   try {
@@ -104,6 +106,31 @@ async function applyModule2(secondInCycle) {
 
 async function tick() {
   try {
+    const persistedMode = readPersistedMode();
+    if (persistedMode === 'on') {
+      if (lastManualMode !== 'on') {
+        console.log('[scheduler] manueller Modus ON aktiv – Scheduler pausiert');
+        lastManualMode = 'on';
+      }
+      ledControll.setMode('on');
+      await ledControll.applyModuleOn();
+      audioScenario.stopBackground();
+      lastModule = null;
+      return;
+    }
+    if (persistedMode === 'off') {
+      if (lastManualMode !== 'off') {
+        console.log('[scheduler] manueller Modus OFF aktiv – Scheduler pausiert');
+        lastManualMode = 'off';
+      }
+      ledControll.setMode('off');
+      await ledControll.applyModuleOff();
+      audioScenario.stopBackground();
+      lastModule = null;
+      return;
+    }
+    lastManualMode = null;
+
     const now = new Date();
     const event = findActiveEvent(now);
     if (!event) {

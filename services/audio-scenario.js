@@ -41,9 +41,12 @@ const playFile = (filePath, volume, tag) => {
     return null;
   }
   try {
+    console.log(`[Audio] ${tag} starte Wiedergabe`, filePath, AUDIO_DEVICE ? `(device ${AUDIO_DEVICE})` : '(default device)', 'vol', volume);
     return player.play(filePath, { mpg123: mpgArgs(volume) }, (error) => {
       if (error) {
         console.error(`[Audio] ${tag} Fehler:`, error.message || error);
+      } else {
+        console.log(`[Audio] ${tag} Ende`, filePath);
       }
     });
   } catch (error) {
@@ -80,6 +83,7 @@ export function playBackground(file, volume = 100) {
 export function stopBackground() {
   if (bgProcess && typeof bgProcess.kill === 'function') {
     try {
+      console.log('[Audio] Hintergrundmusik stop', bgCurrent);
       bgProcess.kill();
     } catch (error) {
       console.error('[Audio] stopBackground kill:', error?.message || error);
@@ -119,6 +123,7 @@ export function playSpeech(file, volume = 100) {
     }
     speechProcess = child;
     child.on('close', () => {
+      console.log('[Audio] Sprachdatei Ende', resolved);
       if (speechProcess === child) speechProcess = null;
       resolve();
     });

@@ -138,14 +138,14 @@ function selectedIndexes(input, count) {
         const [a, b] = part.split('-').map((n) => parseInt(n, 10));
         if (!Number.isNaN(a) && !Number.isNaN(b)) {
           const start = Math.max(1, Math.min(a, b));
-          const end = Math.min(total, Math.max(a, b));
+          const end = Math.min(count, Math.max(a, b));
           for (let value = start; value <= end; value += 1) {
             set.add(value - 1);
           }
         }
       } else {
         const index = parseInt(part, 10);
-        if (!Number.isNaN(index) && index >= 1 && index <= total) {
+        if (!Number.isNaN(index) && index >= 1 && index <= count) {
           set.add(index - 1);
         }
       }
