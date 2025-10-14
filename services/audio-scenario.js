@@ -26,8 +26,10 @@ let speechProcess = null;
 let speechLock = false;
 
 const clampVolume = (value) => Math.max(0, Math.min(400, Math.round(value)));
-const mpgArgs = (volume) => {
-  const args = ['--scale', String(clampVolume(volume)), '-q'];
+const buildMpgArgs = (volume, { loop = false } = {}) => {
+  const args = [];
+  if (loop) args.push('--loop', '-1');
+  args.push('--scale', String(clampVolume(volume)), '-q');
   if (AUDIO_DEVICE) {
     args.unshift(AUDIO_DEVICE);
     args.unshift('-a');
@@ -35,14 +37,23 @@ const mpgArgs = (volume) => {
   return args;
 };
 
-const playFile = (filePath, volume, tag) => {
+const playFile = (filePath, volume, tag, options = {}) => {
   if (!player) {
     console.log('[SIMULATION]', tag, filePath, 'vol', volume);
     return null;
   }
   try {
-    console.log(`[Audio] ${tag} starte Wiedergabe`, filePath, AUDIO_DEVICE ? `(device ${AUDIO_DEVICE})` : '(default device)', 'vol', volume);
-    return player.play(filePath, { mpg123: mpgArgs(volume) }, (error) => {
+    const args = buildMpgArgs(volume, options);
+    console.log(
+      `[Audio] ${tag} starte Wiedergabe`,
+      filePath,
+      AUDIO_DEVICE ? `(device ${AUDIO_DEVICE})` : '(default device)',
+      'args',
+      args.join(' '),
+      'vol',
+      volume
+    );
+    return player.play(filePath, { mpg123: args }, (error) => {
       if (error) {
         console.error(`[Audio] ${tag} Fehler:`, error.message || error);
       } else {
@@ -67,7 +78,7 @@ export function playBackground(file, volume = 100) {
   if (bgCurrent === resolved && bgProcess) return;
 
   stopBackground();
-  const child = playFile(resolved, volume, 'Hintergrundmusik');
+  const child = playFile(resolved, volume, 'Hintergrundmusik', { loop: true });
   if (child) {
     bgCurrent = resolved;
     bgProcess = child;
@@ -116,7 +127,7 @@ export function playSpeech(file, volume = 100) {
   speechProcess = null;
 
   return new Promise((resolve) => {
-    const child = playFile(resolved, volume, 'Sprachdatei');
+    const child = playFile(resolved, volume, 'Sprachdatei', { loop: false });
     if (!child) {
       resolve();
       return;
