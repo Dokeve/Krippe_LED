@@ -82,6 +82,12 @@
       .replaceAll("'", "&#039;");
   }
 
+  const clampPercent = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return 0;
+    return Math.max(0, Math.min(100, Math.round(num)));
+  };
+
   // ---- DOM ready ----------------------------------------------------------
 
   document.addEventListener("DOMContentLoaded", async () => {
@@ -181,10 +187,10 @@
             "Nacht-Tag": elBgNightDay?.value || ""
           };
           // Lautstärken mitschreiben
-          audioCfg.volume = {
-            speech: parseInt(elVolSpeech?.value || "100", 10),
-            background: parseInt(elVolBg?.value || "100", 10)
-          };
+        audioCfg.volume = {
+          speech: clampPercent(parseInt(elVolSpeech?.value || "100", 10)),
+          background: clampPercent(parseInt(elVolBg?.value || "100", 10))
+        };
           await persistAudio();
           log("Hintergrundmusik-Zuordnungen gespeichert");
         } catch (e) {
@@ -196,12 +202,16 @@
     // Lautstärkeanzeige aktualisieren
     if (elVolSpeech && elVolSpeechVal) {
       elVolSpeech.addEventListener("input", () => {
-        elVolSpeechVal.textContent = `${elVolSpeech.value}%`;
+        const percent = clampPercent(elVolSpeech.value);
+        elVolSpeech.value = String(percent);
+        elVolSpeechVal.textContent = `${percent}%`;
       });
     }
     if (elVolBg && elVolBgVal) {
       elVolBg.addEventListener("input", () => {
-        elVolBgVal.textContent = `${elVolBg.value}%`;
+        const percent = clampPercent(elVolBg.value);
+        elVolBg.value = String(percent);
+        elVolBgVal.textContent = `${percent}%`;
       });
     }
 
@@ -262,8 +272,8 @@
         // Merge mit Default-Struktur, um fehlende Felder abzufangen
         audioCfg = {
           volume: {
-            speech: Number(cfg?.volume?.speech ?? 100),
-            background: Number(cfg?.volume?.background ?? 100)
+            speech: clampPercent(cfg?.volume?.speech ?? 100),
+            background: clampPercent(cfg?.volume?.background ?? 100)
           },
           speech: Array.isArray(cfg?.speech) ? cfg.speech : [],
           background: {

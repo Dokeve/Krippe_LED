@@ -156,7 +156,7 @@ try {
 // Start
 const server = http.createServer(app);
 server.listen(config.port, () => {
-  console.log(`Server l?uft auf http://localhost:${config.port}`);
+  console.log(`Server läuft auf http://localhost:${config.port}`);
 });
 
 // Robustheit

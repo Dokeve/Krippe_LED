@@ -25,11 +25,21 @@ let bgProcess = null;
 let speechProcess = null;
 let speechLock = false;
 
-const clampVolume = (value) => Math.max(0, Math.min(400, Math.round(value)));
-const buildMpgArgs = (volume, { loop = false } = {}) => {
+const SCALE_MAX = 400;
+const VOLUME_MAX_PERCENT = 100;
+
+const clampScale = (value) => Math.max(0, Math.min(SCALE_MAX, Math.round(value)));
+const clampPercent = (value) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.min(VOLUME_MAX_PERCENT, Math.round(num)));
+};
+const percentToScale = (percent) => clampScale(clampPercent(percent) * 4);
+
+const buildMpgArgs = (scale, { loop = false } = {}) => {
   const args = [];
   if (loop) args.push('--loop', '-1');
-  args.push('--scale', String(clampVolume(volume)), '-q');
+  args.push('--scale', String(clampScale(scale)), '-q');
   if (AUDIO_DEVICE) {
     args.unshift(AUDIO_DEVICE);
     args.unshift('-a');
@@ -37,13 +47,14 @@ const buildMpgArgs = (volume, { loop = false } = {}) => {
   return args;
 };
 
-const playFile = (filePath, volume, tag, options = {}) => {
+const playFile = (filePath, volumePercent, tag, options = {}) => {
   if (!player) {
-    console.log('[SIMULATION]', tag, filePath, 'vol', volume);
+    console.log('[SIMULATION]', tag, filePath, 'vol', `${clampPercent(volumePercent)}%`);
     return null;
   }
   try {
-    const args = buildMpgArgs(volume, options);
+    const scale = percentToScale(volumePercent);
+    const args = buildMpgArgs(scale, options);
     console.log(
       `[Audio] ${tag} starte Wiedergabe`,
       filePath,
@@ -51,7 +62,7 @@ const playFile = (filePath, volume, tag, options = {}) => {
       'args',
       args.join(' '),
       'vol',
-      volume
+      `${clampPercent(volumePercent)}%`
     );
     return player.play(filePath, { mpg123: args }, (error) => {
       if (error) {
@@ -72,13 +83,13 @@ function fullPath(base, relative) {
   return path.join(base, relative);
 }
 
-export function playBackground(file, volume = 100) {
+export function playBackground(file, volumePercent = 100) {
   const resolved = fullPath(AUDIO_BACKGROUND_DIR, file);
   if (!resolved) return;
   if (bgCurrent === resolved && bgProcess) return;
 
   stopBackground();
-  const child = playFile(resolved, volume, 'Hintergrundmusik', { loop: true });
+  const child = playFile(resolved, volumePercent, 'Hintergrundmusik', { loop: true });
   if (child) {
     bgCurrent = resolved;
     bgProcess = child;
@@ -106,14 +117,14 @@ export function stopBackground() {
   bgCurrent = null;
 }
 
-export function playSpeech(file, volume = 100) {
+export function playSpeech(file, volumePercent = 100) {
   const resolved = fullPath(AUDIO_SPEECH_DIR, file);
   if (!resolved) return Promise.resolve();
 
   stopBackground();
 
   if (!player) {
-    console.log('[SIMULATION] Sprachdatei:', resolved, 'vol', volume);
+    console.log('[SIMULATION] Sprachdatei:', resolved, 'vol', `${clampPercent(volumePercent)}%`);
     return new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
@@ -127,7 +138,7 @@ export function playSpeech(file, volume = 100) {
   speechProcess = null;
 
   return new Promise((resolve) => {
-    const child = playFile(resolved, volume, 'Sprachdatei', { loop: false });
+    const child = playFile(resolved, volumePercent, 'Sprachdatei', { loop: false });
     if (!child) {
       resolve();
       return;
