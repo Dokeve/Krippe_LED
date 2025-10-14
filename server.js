@@ -1,4 +1,4 @@
-// server.js - Rahmenserver f?r Krippe_LED (ESM, Node = 20)
+﻿// server.js - Rahmenserver f?r Krippe_LED (ESM, Node = 20)
 // L?dt Router aus ./routes automatisch, liefert Health, startet optional scheduler.
 // Erwartete Routen-Dateien (wenn vorhanden): health.js, audio.js, calendar.js, led-groups.js, star.js
 
@@ -165,5 +165,6 @@ process.on('uncaughtException', (err) => console.error('[uncaughtException]', er
 
 // Optional f?r Tests
 export default app;
+
 
 

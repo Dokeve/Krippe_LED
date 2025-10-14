@@ -1,4 +1,4 @@
-// services/audio-scenario.js
+﻿// services/audio-scenario.js
 // Audio-Steuerung (Ducking, Sprachclips) - nutzt audio-store statt DB
 import path from 'node:path';
 import { createRequire } from 'node:module';

@@ -1,4 +1,4 @@
-import { fileURLToPath } from "node:url";
+﻿import { fileURLToPath } from "node:url";
 import path, { join } from "node:path";
 import fs from "node:fs";
 
@@ -54,7 +54,7 @@ const DEFAULT_AUDIO_ROOT = envPath(
 );
 
 const audio = {
-  outputDevice: clean(process.env.AUDIO_OUTPUT_DEVICE) || ""
+  outputDevice: clean(process.env.AUDIO_OUTPUT_DEVICE) || "hw:1,0"
 };
 
 const paths = {
@@ -115,3 +115,4 @@ const cfg = {
 };
 
 export default cfg;
+
