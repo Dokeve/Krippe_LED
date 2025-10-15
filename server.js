@@ -33,6 +33,12 @@ try {
 } catch (e) {
   // ignore
 }
+// diagnostic: print whether .env file exists and raw env value for CYCLE_DAY
+try {
+  const envFilePath = join(path.dirname(fileURLToPath(import.meta.url)), '.env');
+  console.log('[env-check] envFileExists:', fs.existsSync(envFilePath), 'envFilePath:', envFilePath);
+  console.log('[env-check] process.env.CYCLE_DAY:', process.env.CYCLE_DAY);
+} catch (e) {}
 
 // CORS light
 app.use((req, res, next) => {

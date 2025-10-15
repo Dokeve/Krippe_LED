@@ -5,6 +5,8 @@ import { createRequire } from 'node:module';
 import { getAudioConfig } from './audio-store.js';
 import { getActiveScenarioAt } from './scenario-controll.js';
 import config from '../config.js';
+import fs from 'node:fs';
+import { spawn } from 'node:child_process';
 
 const require = createRequire(import.meta.url);
 
@@ -32,7 +34,24 @@ let bgDisabledUntil = 0; // timestamp while we suppress automatic restarts
 
 const MPG123_SCALE_MAX = 32768;
 const VOLUME_MAX_PERCENT = 100;
-const DUCK_PERCENT = 30;
+const DUCK_PERCENT = Number.isFinite(Number(config.audio?.duckPercent)) ? Number(config.audio.duckPercent) : 30;
+const DEBUG_LOG = config.audio?.debugLogPath;
+
+function appendDebugLog(line) {
+  if (!DEBUG_LOG) return;
+  try {
+    // ensure directory exists
+    try {
+      const dir = require('node:path').dirname(DEBUG_LOG);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    } catch (e) {
+      // ignore
+    }
+    fs.appendFileSync(DEBUG_LOG, `[${new Date().toISOString()}] ${line}\n`);
+  } catch (e) {
+    // ignore write errors
+  }
+}
 
 const clampScale = (value) => Math.max(0, Math.min(MPG123_SCALE_MAX, Math.round(value)));
 const clampPercent = (value) => {
@@ -75,23 +94,53 @@ const playFile = (filePath, volumePercent, tag, options = {}) => {
       'vol',
       `${percent}%`
     );
-    const child = player.play(filePath, { mpg123: args }, (error) => {
-      if (error) {
-        console.error(`[Audio] ${tag} Fehler (callback):`, error.message || error);
-      } else {
-        console.log(`[Audio] ${tag} Ende`, filePath);
+    appendDebugLog(`${tag} START ${filePath} device=${AUDIO_DEVICE} args=${args.join(' ')} vol=${percent}%`);
+
+    // prefer to spawn mpg123 directly to capture stdout/stderr reliably
+    const spawnArgs = [];
+    if (AUDIO_DEVICE) {
+      spawnArgs.push('-a', AUDIO_DEVICE);
+    }
+    // force ALSA output module to avoid JACK auto-selection
+    spawnArgs.push('-o', 'alsa');
+    if (options.loop) {
+      spawnArgs.push('--loop', '-1');
+    }
+    if (clampScale(percentToScale(percent)) !== MPG123_SCALE_MAX) {
+      spawnArgs.push('--scale', String(clampScale(percentToScale(percent))));
+    }
+    spawnArgs.push('-q');
+    spawnArgs.push(filePath);
+
+    // avoid rapid respawn storms: if we started a bg process very recently, skip
+    try {
+      const now = Date.now();
+      if (tag === 'Hintergrundmusik' && bgLastStart && now - bgLastStart < 500) {
+        appendDebugLog(`${tag} SKIP spawn due to recent start (delta=${now - bgLastStart}ms)`);
+        return null;
       }
-    });
+    } catch (e) {}
+
+    const child = spawn('mpg123', spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+    if (child.stdout) {
+      child.stdout.on('data', (d) => appendDebugLog(`MPG123 STDOUT: ${String(d).trim()}`));
+    }
+    if (child.stderr) {
+      child.stderr.on('data', (d) => appendDebugLog(`MPG123 STDERR: ${String(d).trim()}`));
+    }
+    child.on('error', (err) => appendDebugLog(`MPG123 ERROR: ${err?.message || err}`));
     // attach error handler where possible
     try {
       if (child && typeof child.on === 'function') {
         child.on('error', (err) => {
           console.error(`[Audio] ${tag} child error:`, err?.message || err);
+          appendDebugLog(`${tag} CHILD ERROR: ${err?.message || err}`);
         });
       }
     } catch (e) {
       // ignore
     }
+    appendDebugLog(`${tag} SPAWNED pid=${child.pid || '(no pid)'}`);
     return child;
   } catch (error) {
     console.error(`[Audio] ${tag} Start fehlgeschlagen:`, error.message || error);
