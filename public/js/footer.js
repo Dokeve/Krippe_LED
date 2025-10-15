@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  document.addEventListener('DOMContentLoaded', () => {
+  const init = () => {
     const style = document.createElement('style');
     style.textContent = '.global-footer{margin:48px auto 16px;max-width:1200px;padding:12px 18px;text-align:center;color:#c6dbff;background:rgba(16,39,71,0.65);border:1px solid #1b3b6b;border-radius:10px;} .global-footer small{font-size:0.85rem;letter-spacing:0.01em;}';
     document.head.appendChild(style);
@@ -35,5 +35,12 @@
     const footer = document.createElement('footer');
     applyFooter(footer);
     document.body.appendChild(footer);
-  });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    // DOM already ready — run immediately
+    init();
+  }
 })();
