@@ -25,6 +25,10 @@ let bgProcess = null;
 let bgVolumePercent = 100;
 let speechProcess = null;
 let speechLock = false;
+let bgLastStart = 0;
+let bgLastStop = 0;
+let bgRestartAttempts = 0;
+let bgDisabledUntil = 0; // timestamp while we suppress automatic restarts
 
 const MPG123_SCALE_MAX = 32768;
 const VOLUME_MAX_PERCENT = 100;
@@ -71,13 +75,24 @@ const playFile = (filePath, volumePercent, tag, options = {}) => {
       'vol',
       `${percent}%`
     );
-    return player.play(filePath, { mpg123: args }, (error) => {
+    const child = player.play(filePath, { mpg123: args }, (error) => {
       if (error) {
-        console.error(`[Audio] ${tag} Fehler:`, error.message || error);
+        console.error(`[Audio] ${tag} Fehler (callback):`, error.message || error);
       } else {
         console.log(`[Audio] ${tag} Ende`, filePath);
       }
     });
+    // attach error handler where possible
+    try {
+      if (child && typeof child.on === 'function') {
+        child.on('error', (err) => {
+          console.error(`[Audio] ${tag} child error:`, err?.message || err);
+        });
+      }
+    } catch (e) {
+      // ignore
+    }
+    return child;
   } catch (error) {
     console.error(`[Audio] ${tag} Start fehlgeschlagen:`, error.message || error);
     return null;
@@ -97,14 +112,35 @@ export function playBackground(file, volumePercent = 100, { forceRestart = false
   const sameFile = bgCurrentFile === resolved;
   const sameVolume = bgVolumePercent === percent;
 
+  // suppress automatic restarts while disabled
+  const now = Date.now();
+  if (bgDisabledUntil && now < bgDisabledUntil) {
+    console.warn('[Audio] Hintergrundmusik restart unterdrückt bis', new Date(bgDisabledUntil).toISOString());
+    return;
+  }
+
   if (!forceRestart && sameFile && sameVolume && bgProcess) {
     return;
   }
 
+  // If changing file or volume we need to restart. But avoid rapid flip/flap: if last stop was very recent,
+  // allow a short cooldown but still perform ducking requests immediately.
+  const timeSinceStop = now - bgLastStop;
+  if (timeSinceStop < 150 && !forceRestart) {
+    // schedule a restart shortly to coalesce rapid changes
+    setTimeout(() => playBackground(file, volumePercent, { forceRestart }), 200);
+    return;
+  }
+
+  // Stop existing process if needed
   if (!forceRestart || !sameFile) {
     stopBackground();
   } else if (bgProcess) {
-    bgProcess.kill();
+    try {
+      bgProcess.kill();
+    } catch (e) {
+      console.warn('[Audio] Fehler beim killen des bgProcess:', e?.message || e);
+    }
     bgProcess = null;
   }
 
@@ -113,9 +149,26 @@ export function playBackground(file, volumePercent = 100, { forceRestart = false
     bgCurrentFile = resolved;
     bgVolumePercent = percent;
     bgProcess = child;
-    child.on('close', () => {
+    bgLastStart = Date.now();
+    bgRestartAttempts = 0; // reset attempts after successful start
+    try {
+      console.log('[Audio] Hintergrundmusik child PID', child.pid || '(no pid)');
+    } catch (e) {}
+
+    child.on('close', (code, signal) => {
+      console.warn('[Audio] Hintergrundmusik Prozess closed', { file: resolved, code, signal });
       if (bgProcess === child) bgProcess = null;
       if (bgCurrentFile === resolved) bgCurrentFile = null;
+      bgLastStop = Date.now();
+      // increment restart attempts and possibly disable automatic restarts
+      bgRestartAttempts += 1;
+      if (bgRestartAttempts >= 3) {
+        bgDisabledUntil = Date.now() + 10000; // suppress restarts for 10s
+        console.error('[Audio] Hintergrundmusik mehrfach abgestürzt — automatische Neustarts für 10s deaktiviert');
+      }
+    });
+    child.on('error', (err) => {
+      console.error('[Audio] Hintergrundmusik child error:', err?.message || err);
     });
   } else if (!player) {
     bgCurrentFile = resolved;
@@ -226,8 +279,8 @@ export async function triggerSpeech(secondInCycle = 0) {
     console.log('[Audio] Sprachdatei übersprungen – bereits in Wiedergabe');
     return false;
   }
-
   const audioCfg = getAudioConfig();
+  console.log('[Audio] triggerSpeech aufgerufen, player?', !!player, 'speech entries', (audioCfg.speech || []).length);
   const entry = findActiveSpeechEntry(audioCfg.speech, new Date());
   if (!entry) {
     console.log('[Audio] Keine Sprachdatei aktiv (Zeitraum außerhalb)');
@@ -236,6 +289,7 @@ export async function triggerSpeech(secondInCycle = 0) {
 
   speechLock = true;
   try {
+    console.log('[Audio] Sprachdatei starten:', entry.file, 'vol', audioCfg.volume?.speech ?? 100);
     await playSpeech(entry.file, audioCfg.volume?.speech ?? 100);
     return true;
   } catch (error) {

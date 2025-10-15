@@ -27,9 +27,4 @@
 ## Niedrige Prioritaet
 
 - **Globaler Footer**
-<<<<<<< Updated upstream
-  - Einheitliche Fusszeile mit "Letzte Aenderung" auf allen Seiten einbauen.
-=======
-  - Einheitliche Fußzeile mit „Letzte Änderung“ auf allen Seiten einbauen.
-sjdhfkj
->>>>>>> Stashed changes
+- Einheitliche Fußzeile mit „Letzte Änderung“ auf allen Seiten einbauen.

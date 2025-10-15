@@ -23,6 +23,17 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.disable('x-powered-by');
 
+// Debug: print important runtime config so we can verify .env values are loaded
+try {
+  console.log('[config] env:', config.env);
+  console.log('[config] port:', config.port);
+  console.log('[config] scheduler.cycleSeconds:', JSON.stringify(config.scheduler?.cycleSeconds));
+  console.log('[config] audio.device:', config.audio?.outputDevice);
+  console.log('[config] audio.paths:', config.paths?.audioRoot, config.paths?.audioBgm, config.paths?.audioSpeech);
+} catch (e) {
+  // ignore
+}
+
 // CORS light
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
