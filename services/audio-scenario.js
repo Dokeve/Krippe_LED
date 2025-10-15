@@ -26,22 +26,26 @@ let bgVolumePercent = 100;
 let speechProcess = null;
 let speechLock = false;
 
-const SCALE_MAX = 400;
+const MPG123_SCALE_MAX = 32768;
 const VOLUME_MAX_PERCENT = 100;
 const DUCK_PERCENT = 30;
 
-const clampScale = (value) => Math.max(0, Math.min(SCALE_MAX, Math.round(value)));
+const clampScale = (value) => Math.max(0, Math.min(MPG123_SCALE_MAX, Math.round(value)));
 const clampPercent = (value) => {
   const num = Number(value);
   if (!Number.isFinite(num)) return 0;
   return Math.max(0, Math.min(VOLUME_MAX_PERCENT, Math.round(num)));
 };
-const percentToScale = (percent) => clampScale((clampPercent(percent) / 100) * SCALE_MAX);
+const percentToScale = (percent) => clampScale((clampPercent(percent) / 100) * MPG123_SCALE_MAX);
 
 const buildMpgArgs = (scale, { loop = false } = {}) => {
   const args = [];
   if (loop) args.push('--loop', '-1');
-  args.push('--scale', String(clampScale(scale)), '-q');
+  const clampedScale = clampScale(scale);
+  if (clampedScale !== MPG123_SCALE_MAX) {
+    args.push('--scale', String(clampedScale));
+  }
+  args.push('-q');
   if (AUDIO_DEVICE) {
     args.unshift(AUDIO_DEVICE);
     args.unshift('-a');
@@ -111,9 +115,7 @@ export function playBackground(file, volumePercent = 100, { forceRestart = false
     bgProcess = child;
     child.on('close', () => {
       if (bgProcess === child) bgProcess = null;
-      if (bgCurrentFile === resolved) {
-        bgProcess = null;
-      }
+      if (bgCurrentFile === resolved) bgCurrentFile = null;
     });
   } else if (!player) {
     bgCurrentFile = resolved;
@@ -124,7 +126,7 @@ export function playBackground(file, volumePercent = 100, { forceRestart = false
 export function stopBackground() {
   if (bgProcess && typeof bgProcess.kill === 'function') {
     try {
-      console.log('[Audio] Hintergrundmusik stop', bgCurrent);
+      console.log('[Audio] Hintergrundmusik stop', bgCurrentFile);
       bgProcess.kill();
     } catch (error) {
       console.error('[Audio] stopBackground kill:', error?.message || error);
@@ -155,32 +157,32 @@ export function playSpeech(file, volumePercent = 100) {
   speechProcess = null;
 
   return new Promise((resolve) => {
-  const child = playFile(resolved, volumePercent, 'Sprachdatei', { loop: false });
-  if (!child) {
-    if (bgCurrentFile) {
-      playBackground(bgCurrentFile, bgVolumePercent, { forceRestart: true });
+    const child = playFile(resolved, volumePercent, 'Sprachdatei', { loop: false });
+    if (!child) {
+      if (bgCurrentFile) {
+        playBackground(bgCurrentFile, bgVolumePercent, { forceRestart: false });
+      }
+      resolve();
+      return;
     }
-    resolve();
-    return;
-  }
 
-  const originalBgFile = bgCurrentFile;
-  const originalBgVolume = bgVolumePercent;
-  const duckTarget = Math.max(0, Math.min(originalBgVolume, DUCK_PERCENT));
-  if (originalBgFile && bgProcess) {
-    playBackground(originalBgFile, duckTarget, { forceRestart: true });
-  }
-
-  speechProcess = child;
-  child.on('close', () => {
-    console.log('[Audio] Sprachdatei Ende', resolved);
-    if (speechProcess === child) speechProcess = null;
-    if (originalBgFile) {
-      playBackground(originalBgFile, originalBgVolume, { forceRestart: true });
+    const originalBgFile = bgCurrentFile;
+    const originalBgVolume = bgVolumePercent;
+    const duckTarget = Math.max(0, Math.min(originalBgVolume, DUCK_PERCENT));
+    if (originalBgFile && bgProcess) {
+      playBackground(originalBgFile, duckTarget, { forceRestart: false });
     }
-    resolve();
+
+    speechProcess = child;
+    child.on('close', () => {
+      console.log('[Audio] Sprachdatei Ende', resolved);
+      if (speechProcess === child) speechProcess = null;
+      if (originalBgFile) {
+        playBackground(originalBgFile, originalBgVolume, { forceRestart: false });
+      }
+      resolve();
+    });
   });
-});
 }
 
 export async function tickAudio(secondInCycle) {
@@ -190,7 +192,7 @@ export async function tickAudio(secondInCycle) {
   const backgroundMap = audioCfg.background || {};
   const background = backgroundMap[name];
   if (background && !speechLock) {
-    playBackground(background, audioCfg.volume?.background ?? 100);
+    playBackground(background, audioCfg.volume?.background ?? 100, { forceRestart: false });
   } else if (!background && bgProcess) {
     stopBackground();
   }
