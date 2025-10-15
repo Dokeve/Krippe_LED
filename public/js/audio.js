@@ -23,7 +23,7 @@
       return "[Zeit]";
     }
   }
-
+//logger für Fehler und Infos
   function log(msg, isError = false) {
     const out = logOut();
     const line = `${ts()} ${isError ? "❌" : "ℹ️"} ${msg}\n`;
