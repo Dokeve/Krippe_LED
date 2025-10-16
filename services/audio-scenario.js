@@ -27,6 +27,7 @@ let bgProcess = null;
 let bgVolumePercent = 100;
 let speechProcess = null;
 let speechLock = false;
+let speechCurrentFile = null;
 let bgLastStart = 0;
 let bgLastStop = 0;
 let bgRestartAttempts = 0;
@@ -305,6 +306,7 @@ export function playSpeech(file, volumePercent = 100) {
     }
   }
   speechProcess = null;
+  speechCurrentFile = null;
 
   return new Promise((resolve) => {
     const child = playFile(resolved, volumePercent, 'Sprachdatei', { loop: false });
@@ -315,7 +317,8 @@ export function playSpeech(file, volumePercent = 100) {
       resolve();
       return;
     }
-
+    // record current speech file for status reporting
+    speechCurrentFile = resolved;
     const originalBgFile = bgCurrentFile;
     const originalBgVolume = bgVolumePercent;
     // revert to simple behaviour: stop background before speech and restart afterwards
@@ -354,7 +357,9 @@ export function playSpeech(file, volumePercent = 100) {
         }
       } catch (e) {}
 
-      if (speechProcess === child) speechProcess = null;
+  if (speechProcess === child) speechProcess = null;
+  // clear currently playing speech file
+  speechCurrentFile = null;
       if (originalBgFile) {
         playBackground(originalBgFile, originalBgVolume, { forceRestart: true });
       }
@@ -399,6 +404,15 @@ export function isSpeechActive() {
   return speechLock;
 }
 
+export function getAudioStatus() {
+  return {
+    backgroundFile: bgCurrentFile,
+    backgroundVolume: bgVolumePercent,
+    speechFile: speechCurrentFile,
+    speechActive: !!speechProcess || !!speechLock
+  };
+}
+
 export async function triggerSpeech(secondInCycle = 0) {
   if (speechLock) {
     console.log('[Audio] Sprachdatei übersprungen – bereits in Wiedergabe');
@@ -425,4 +439,4 @@ export async function triggerSpeech(secondInCycle = 0) {
   }
 }
 
-export default { tickAudio, stopBackground, playSpeech, triggerSpeech, isSpeechActive };
+export default { tickAudio, stopBackground, playSpeech, triggerSpeech, isSpeechActive, getAudioStatus };

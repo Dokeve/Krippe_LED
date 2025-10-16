@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { getCalendarEvents } from '../services/calendar-store.js';
 import { getActiveScenarioAt, totalCycleSeconds } from '../services/scenario-controll.js';
+import audioScenario from '../services/audio-scenario.js';
 
 const router = Router();
 
@@ -46,12 +47,13 @@ router.get('/', (_req, res) => {
     const now = new Date();
     const event = findActiveEvent(now);
     const moduleId = resolveModule(event);
+    const audio = audioScenario?.getAudioStatus?.() || {};
     if (moduleId === '2') {
-      const secondInCycle = computeSecondInCycle(event, now);
+      const secondInCycle = Math.round(computeSecondInCycle(event, now));
       const scenario = getActiveScenarioAt(secondInCycle);
-      return res.json({ module: '2', scenario, secondInCycle });
+      return res.json({ module: '2', scenario, secondInCycle, audio });
     }
-    return res.json({ module: moduleId, scenario: null });
+    return res.json({ module: moduleId, scenario: null, audio });
   } catch (error) {
     res.status(500).json({ error: 'Status konnte nicht ermittelt werden', detail: error?.message || String(error) });
   }

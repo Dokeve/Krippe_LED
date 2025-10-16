@@ -8,30 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(m);
   }
 
-  const modeDisp = document.getElementById('current-mode-value');
+  // Unified status elements (top status bar)
+  const statusModeValue = document.getElementById('status-mode-value');
+  const statusLedValue = document.getElementById('status-led-value');
+  const statusAudioValue = document.getElementById('status-audio-value');
+  const statusCalendarValue = document.getElementById('status-calendar-value');
+  const statusScenarioValue = document.getElementById('status-scenario-value');
 
-  const scenarioDisp = (() => {
-    // create a small element under the status block to show current scenario for Modul 2
-    const statusOverview = document.getElementById('status-overview');
-    if (!statusOverview) return null;
-    let el = document.getElementById('scenario-status');
-    if (!el) {
-      el = document.createElement('p');
-      el.id = 'scenario-status';
-      el.textContent = '';
-      statusOverview.appendChild(el);
-    }
-    return el;
-  })();
-
-  async function fetchMode() {
-    try {
-      const r = await fetch('/api/mode', { cache: 'no-store' });
-      const j = await r.json();
-      if (modeDisp) modeDisp.textContent = j.mode || 'auto';
-    } catch (e) { log('Modus konnte nicht geladen werden: ' + e.message); }
-  }
-  fetchMode();
 
   // Fetch a compact status: which module is active and (for module 2) the current scenario
   async function fetchStatus() {
@@ -40,25 +23,47 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
       const j = await r.json();
       // j: { module: '1'|'2'|null, scenario?: { name, second, duration } }
-      const ledStatus = document.getElementById('led-status');
-      if (ledStatus) ledStatus.textContent = j.module === '2' ? 'Automatisch (Modul 2)' : (j.module === '1' ? 'An (Modul 1)' : (j.module === '0' || j.module === null ? 'Aus' : String(j.module)));
+      // Mode / LED short labels
+      const modeShort = j.module === '2' ? 'Auto' : (j.module === '1' ? 'On' : (j.module === null ? 'Off' : String(j.module)));
+      if (statusModeValue) statusModeValue.textContent = modeShort;
+      if (statusLedValue) statusLedValue.textContent = j.module === '2' ? 'Auto (Modul 2)' : (j.module === '1' ? 'On (Modul 1)' : (j.module === null ? 'Off' : String(j.module)));
 
-      if (scenarioDisp) {
+      // Audio: prefer speech file if active, otherwise background file
+      try {
+        const audio = j.audio || {};
+        let audioText = '—';
+        if (audio.speechActive && audio.speechFile) {
+          audioText = `Speech: ${audio.speechFile.split(/\\|\//).pop()}`;
+        } else if (audio.backgroundFile) {
+          audioText = `BGM: ${audio.backgroundFile.split(/\\|\//).pop()}`;
+        }
+        if (statusAudioValue) statusAudioValue.textContent = audioText;
+      } catch (e) { if (statusAudioValue) statusAudioValue.textContent = '—'; }
+
+      if (statusCalendarValue) statusCalendarValue.textContent = j.module ? 'OK' : 'kein Ereignis';
+
+      if (statusScenarioValue) {
         if (j.module === '2' && j.scenario) {
-          scenarioDisp.textContent = `Aktuelles Szenario: ${j.scenario.name} — Sekunde ${j.scenario.second}/${j.scenario.duration}s`;
+          // server already rounds seconds; ensure integer display
+          const sec = Number.isFinite(Number(j.scenario.second)) ? Math.round(j.scenario.second) : j.scenario.second;
+          statusScenarioValue.textContent = `${j.scenario.name} — Sek ${sec}/${j.scenario.duration}s`;
         } else {
-          scenarioDisp.textContent = '';
+          statusScenarioValue.textContent = '';
         }
       }
     } catch (e) { log('Status konnte nicht geladen werden: ' + e.message); }
   }
+
+  // initial fetch and periodic polling (10s)
   fetchStatus();
+  setInterval(fetchStatus, 10000);
 
   async function setMode(mode){
     try{
       const r = await fetch('/api/mode', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({mode}) });
       const j = await r.json();
-      if (modeDisp) modeDisp.textContent = j.mode;
+      // update unified status bar mode display instead of removed current-mode element
+      if (statusModeValue) statusModeValue.textContent = (j.mode === 'auto' ? 'Auto' : (j.mode === 'on' ? 'On' : (j.mode === 'off' ? 'Off' : j.mode)));
       log('Modus gesetzt: ' + j.mode);
     }catch(e){ log('Modus-Setzen fehlgeschlagen: ' + e.message); }
   }
