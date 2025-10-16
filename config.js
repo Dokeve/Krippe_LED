@@ -57,6 +57,9 @@ const audio = {
   outputDevice: clean(process.env.AUDIO_OUTPUT_DEVICE) || "hw:1,0"
 };
 
+// enable verbose audio debug logging (disabled by default)
+audio.debugEnabled = truthy(process.env.AUDIO_DEBUG_ENABLED, false);
+
 // optional audio settings
 audio.duckPercent = toInt(process.env.AUDIO_DUCK_PERCENT, 30);
 audio.debugLogPath = envPath('AUDIO_DEBUG_LOG_PATH', join(rootDir, 'logs', 'audio-debug.log'));

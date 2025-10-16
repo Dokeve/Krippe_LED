@@ -36,6 +36,7 @@ const MPG123_SCALE_MAX = 32768;
 const VOLUME_MAX_PERCENT = 100;
 const DUCK_PERCENT = Number.isFinite(Number(config.audio?.duckPercent)) ? Number(config.audio.duckPercent) : 30;
 const DEBUG_LOG = config.audio?.debugLogPath;
+const VERBOSE_DEBUG = !!config.audio?.debugEnabled;
 
 function appendDebugLog(line) {
   if (!DEBUG_LOG) return;
@@ -101,8 +102,9 @@ const playFile = (filePath, volumePercent, tag, options = {}) => {
     if (AUDIO_DEVICE) {
       spawnArgs.push('-a', AUDIO_DEVICE);
     }
-    // force ALSA output module to avoid JACK auto-selection
-    spawnArgs.push('-o', 'alsa');
+    // optionally force ALSA output module to avoid JACK auto-selection; callers can set options.forceAlsa=false
+    const forceAlsa = options.forceAlsa !== false;
+    if (forceAlsa) spawnArgs.push('-o', 'alsa');
     if (options.loop) {
       spawnArgs.push('--loop', '-1');
     }
@@ -121,25 +123,48 @@ const playFile = (filePath, volumePercent, tag, options = {}) => {
       }
     } catch (e) {}
 
-    const child = spawn('mpg123', spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
-    if (child.stdout) {
-      child.stdout.on('data', (d) => appendDebugLog(`MPG123 STDOUT: ${String(d).trim()}`));
-    }
-    if (child.stderr) {
-      child.stderr.on('data', (d) => appendDebugLog(`MPG123 STDERR: ${String(d).trim()}`));
-    }
-    child.on('error', (err) => appendDebugLog(`MPG123 ERROR: ${err?.message || err}`));
-    // attach error handler where possible
+  const child = spawn('mpg123', spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+    // attach stdout/stderr handlers and keep a short in-memory buffer per child so we can
+    // include the last stderr when the process exits (useful for journalctl immediate context)
     try {
-      if (child && typeof child.on === 'function') {
-        child.on('error', (err) => {
-          console.error(`[Audio] ${tag} child error:`, err?.message || err);
-          appendDebugLog(`${tag} CHILD ERROR: ${err?.message || err}`);
-        });
-      }
+      // attach accumulation properties on the child process object
+      child._mpg_stdout = '';
+      child._mpg_stderr = '';
+
+        if (child.stdout) {
+          child.stdout.on('data', (d) => {
+            const s = String(d);
+            child._mpg_stdout += s;
+            // keep buffer reasonably small
+            if (child._mpg_stdout.length > 16_000) child._mpg_stdout = child._mpg_stdout.slice(-16_000);
+            if (VERBOSE_DEBUG) {
+              appendDebugLog(`MPG123 STDOUT: ${s.trim()}`);
+              // also surface to journal for faster debugging
+              try { console.log(`[Audio][mpg123][stdout] ${s.trim()}`); } catch (e) {}
+            }
+          });
+        }
+        if (child.stderr) {
+          child.stderr.on('data', (d) => {
+            const s = String(d);
+            child._mpg_stderr += s;
+            if (child._mpg_stderr.length > 16_000) child._mpg_stderr = child._mpg_stderr.slice(-16_000);
+            if (VERBOSE_DEBUG) {
+              appendDebugLog(`MPG123 STDERR: ${s.trim()}`);
+              // surface to journal - stderr is important and visible in systemd logs
+              try { console.error(`[Audio][mpg123][stderr] ${s.trim()}`); } catch (e) {}
+            }
+          });
+        }
+
+      child.on('error', (err) => {
+        try { console.error(`[Audio] ${tag} child error:`, err?.message || err); } catch (e) {}
+        appendDebugLog(`${tag} CHILD ERROR: ${err?.message || err}`);
+      });
     } catch (e) {
-      // ignore
+      // ignore any instrumentation errors
     }
+
     appendDebugLog(`${tag} SPAWNED pid=${child.pid || '(no pid)'}`);
     return child;
   } catch (error) {
@@ -205,7 +230,30 @@ export function playBackground(file, volumePercent = 100, { forceRestart = false
     } catch (e) {}
 
     child.on('close', (code, signal) => {
-      console.warn('[Audio] Hintergrundmusik Prozess closed', { file: resolved, code, signal });
+      // include recent stderr in logs to help diagnose failures (trim to last lines)
+      const lastStderr = (child._mpg_stderr || '').split(/\r?\n/).filter(Boolean).slice(-8).join(' | ');
+      console.warn('[Audio] Hintergrundmusik Prozess closed', { file: resolved, code, signal, lastStderr: lastStderr || '(none)' });
+      appendDebugLog(`Hintergrundmusik CLOSED file=${resolved} code=${code} signal=${signal} lastStderr=${lastStderr || '(none)'} `);
+      // if we forced ALSA and mpg123 failed with driver module errors, try a one-time respawn without forcing ALSA
+      try {
+        const stderrLower = (child._mpg_stderr || '').toLowerCase();
+        if (stderrLower.includes('failure loading driver module') && !child._mpg_triedFallback) {
+          appendDebugLog('Hintergrundmusik attempting one-time fallback spawn without forceAlsa');
+          child._mpg_triedFallback = true;
+          // spawn a new child but ensure we don't increment restart attempts here
+          const fallback = playFile(resolved, percent, 'Hintergrundmusik', { loop: true, forceAlsa: false });
+          if (fallback) {
+            // wire the fallback to the same bookkeeping
+            bgProcess = fallback;
+            bgCurrentFile = resolved;
+            bgVolumePercent = percent;
+            bgLastStart = Date.now();
+            appendDebugLog(`Hintergrundmusik FALLBACK SPAWNED pid=${fallback.pid || '(no pid)'} `);
+            return; // don't proceed with usual restart bookkeeping
+          }
+        }
+      } catch (e) {}
+
       if (bgProcess === child) bgProcess = null;
       if (bgCurrentFile === resolved) bgCurrentFile = null;
       bgLastStop = Date.now();
@@ -270,17 +318,45 @@ export function playSpeech(file, volumePercent = 100) {
 
     const originalBgFile = bgCurrentFile;
     const originalBgVolume = bgVolumePercent;
-    const duckTarget = Math.max(0, Math.min(originalBgVolume, DUCK_PERCENT));
+    // revert to simple behaviour: stop background before speech and restart afterwards
     if (originalBgFile && bgProcess) {
-      playBackground(originalBgFile, duckTarget, { forceRestart: false });
+      try {
+        stopBackground();
+      } catch (e) {
+        console.warn('[Audio] Fehler beim Stoppen der Hintergrundmusik vor Sprachwiedergabe:', e?.message || e);
+      }
     }
 
     speechProcess = child;
-    child.on('close', () => {
-      console.log('[Audio] Sprachdatei Ende', resolved);
+    child.on('close', async (code, signal) => {
+      const lastStderr = (child._mpg_stderr || '').split(/\r?\n/).filter(Boolean).slice(-8).join(' | ');
+      console.log('[Audio] Sprachdatei Ende', resolved, { code, signal, lastStderr: lastStderr || '(none)' });
+      appendDebugLog(`Sprachdatei CLOSED file=${resolved} code=${code} signal=${signal} lastStderr=${lastStderr || '(none)'} `);
+
+      // if mpg123 failed with driver module error and we didn't try fallback yet, attempt one-time fallback
+      try {
+        const stderrLower = (child._mpg_stderr || '').toLowerCase();
+        if (stderrLower.includes('failure loading driver module') && !child._mpg_triedFallback) {
+          appendDebugLog('Sprachdatei attempting one-time fallback spawn without forceAlsa');
+          child._mpg_triedFallback = true;
+          const fallback = playFile(resolved, volumePercent, 'Sprachdatei', { loop: false, forceAlsa: false });
+          if (fallback) {
+            speechProcess = fallback;
+            // wait for fallback to finish
+            fallback.on('close', () => {
+              appendDebugLog('Sprachdatei fallback closed');
+              if (speechProcess === fallback) speechProcess = null;
+              if (originalBgFile) playBackground(originalBgFile, originalBgVolume, { forceRestart: true });
+              resolve();
+            });
+            return;
+          }
+        }
+      } catch (e) {}
+
       if (speechProcess === child) speechProcess = null;
       if (originalBgFile) {
-        playBackground(originalBgFile, originalBgVolume, { forceRestart: false });
+        playBackground(originalBgFile, originalBgVolume, { forceRestart: true });
       }
       resolve();
     });
