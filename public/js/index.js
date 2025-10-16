@@ -10,6 +10,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const modeDisp = document.getElementById('current-mode-value');
 
+  const scenarioDisp = (() => {
+    // create a small element under the status block to show current scenario for Modul 2
+    const statusOverview = document.getElementById('status-overview');
+    if (!statusOverview) return null;
+    let el = document.getElementById('scenario-status');
+    if (!el) {
+      el = document.createElement('p');
+      el.id = 'scenario-status';
+      el.textContent = '';
+      statusOverview.appendChild(el);
+    }
+    return el;
+  })();
+
   async function fetchMode() {
     try {
       const r = await fetch('/api/mode', { cache: 'no-store' });
@@ -18,6 +32,27 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { log('Modus konnte nicht geladen werden: ' + e.message); }
   }
   fetchMode();
+
+  // Fetch a compact status: which module is active and (for module 2) the current scenario
+  async function fetchStatus() {
+    try {
+      const r = await fetch('/api/status', { cache: 'no-store' });
+      if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+      const j = await r.json();
+      // j: { module: '1'|'2'|null, scenario?: { name, second, duration } }
+      const ledStatus = document.getElementById('led-status');
+      if (ledStatus) ledStatus.textContent = j.module === '2' ? 'Automatisch (Modul 2)' : (j.module === '1' ? 'An (Modul 1)' : (j.module === '0' || j.module === null ? 'Aus' : String(j.module)));
+
+      if (scenarioDisp) {
+        if (j.module === '2' && j.scenario) {
+          scenarioDisp.textContent = `Aktuelles Szenario: ${j.scenario.name} — Sekunde ${j.scenario.second}/${j.scenario.duration}s`;
+        } else {
+          scenarioDisp.textContent = '';
+        }
+      }
+    } catch (e) { log('Status konnte nicht geladen werden: ' + e.message); }
+  }
+  fetchStatus();
 
   async function setMode(mode){
     try{

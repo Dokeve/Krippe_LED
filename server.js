@@ -105,6 +105,7 @@ const expectedRouters = [
   { file: 'calendar.js',   base: '/api/calendar' },
   { file: 'led-groups.js', base: '/api/led-groups' },
   { file: 'mode.js',       base: '/api/mode' },
+  { file: 'status.js',     base: '/api/status' },
   { file: 'star.js',       base: '/api/star' },
   { file: 'files.js',      base: '/api/list-files' }
 ];
