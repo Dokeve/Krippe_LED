@@ -1,6 +1,6 @@
 ﻿1.	Erstelle eine Weboberfläche zur Steuerung von LEDs, Sound und 
 Bachlaufsteuerung
-2.	Die Steuerung der LEDs läuft über WS2812. Es werden Rund 1000 Leds 
+2.	Die Steuerung der LEDs läuft über WS2812. Es werden rund 1000 LEDs 
 angesteuert.
 3.	Externe Stromversorgung für die LEDs ist vorhanden
 4.	Die LEDs sind in mehrere Kategorien unterteilt. Diese sind wie folgt:
@@ -16,7 +16,7 @@ iv.	Anzahl LEDs
 v.	Wandbeleuchtung
 vi.	Grundfarbe Tag
 vii.	Grundfarbe Nacht
-viii.	Mehrere Zeitangabemöglichkeit nach dem man das Szenario 
+ viii.	Mehrere Zeitangabemöglichkeit nachdem man das Szenario 
 auswählen kann. Für jede Zeiteingabe (Start- / Endzeit) soll ein 
 Szenario ausgewählt werden können. Ist keine Zeit eingegeben gilt 
 die Start oder Endzeit. 
@@ -26,8 +26,8 @@ entsprechend der zuvor eingetragenen LED Anzahl Farben individuell auswählen ka
 Ist Wandbeleuchtung aktiviert, dann soll entsprechend des abspielbaren Szenario Tag-
 Nach-Szenario von der Grundfarbe Tag zu Grundfarbe Nacht entsprechend eines 
 Sonnenuntergangs und bei Szenario Nacht-Tag entsprechend eines Sonnenaufgangs
-c.	Lagerfeuer soll als dritten Bereich angelegt werden. Hier sollen 5 farben 
-auswählbar sei und ein Bereich LED von LED bis. Dieser soll analog eines 
+c.	Lagerfeuer soll als dritten Bereich angelegt werden. Hier sollen 5 Farben 
+auswählbar sein und ein Bereich LED von LED bis. Dieser soll analog eines 
 echten Lagerfeuers angesteuert werden.
 5.	Erstelle einen Visuellen Kalender (FullCalender) der auch als Kalender dargestellt 
 wird.
@@ -71,8 +71,7 @@ ii.	Kategorie Hintergrundmusik
 b.	Die Audiosprachdateien sollen per Knopfdruck über GPIO gesteuert 
 aktiviert werden. Dabei soll eine Mehrfachaktivierung während die 
 Audiosprachdateien abgespielt werden unterbunden werden. Wird die 
-Audiosprachdatei abgespielt, wird die Hintergrundmusik reduziert 
-werden.
+Audiosprachdatei abgespielt, wird die Hintergrundmusik reduziert.
 c.	Die Audiosprachdateien sollen auf der Unterseite für einen Zeitraum 
 angelegt werden. Stimmt der Zeitraum mit dem Kalendereintrag Modul 2 
 übereinstimmt, wird die entsprechende Audiosprachdatei abgespielt.
@@ -85,7 +84,7 @@ iii.	Szenario Nacht. Nacht.mp3 wird abgespielt.
 iv.	Szenario Nacht-Tag: Nacht-Tag.mp3 wird abgespielt. 
 9.	Die Dateien sollen aus einem Ordner hochgeladen werden können und die 
 Audiosprachdateien mit einem Zeitraum versehen werden können. Beim 
-Auswählen der Datei wird der Name der Datei Automatisch in das entsprechende 
+Auswählen der Datei wird der Name der Datei automatisch in das entsprechende 
 Feld eingetragen.
 10.	Die Audiosprachdateien sind im auf dem Raspberry Pi auf dem Pfad: 
 /home/singer/led-sound-bachlauf/audio/krippe/Audioprachdateien

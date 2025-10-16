@@ -14,7 +14,7 @@ let player = null;
 try {
   player = require('play-sound')({ player: 'mpg123' });
 } catch (error) {
-  console.warn('[Audio] play-sound/mpg123 nicht verfuegbar - Audio wird simuliert:', error?.message || error);
+  console.warn('[Audio] play-sound/mpg123 nicht verfügbar - Audio wird simuliert:', error?.message || error);
 }
 
 const AUDIO_ROOT = config.paths?.audioRoot ?? path.join(process.cwd(), 'audio');
