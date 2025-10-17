@@ -108,6 +108,9 @@ const gpio = {
   audioButton: toInt(process.env.AUDIO_BUTTON_GPIO, 17)
 };
 
+// Pump relay polarity: set PUMP_ACTIVE_HIGH=0 or false in .env to invert (active LOW modules)
+gpio.activeHigh = truthy(process.env.PUMP_ACTIVE_HIGH, true);
+
 const cfg = {
   env: clean(process.env.NODE_ENV) || "development",
   port: toInt(process.env.PORT, 3000),

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bachlauf - Pumpensteuerung</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script defer src="/js/statusbar.js"></script>
+  <script defer src="/js/bachlauf.js"></script>
+  <script defer src="/js/footer.js"></script>
+</head>
+<body>
+  <main id="main" role="main">
+    <nav class="top-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Start</a>
+      <a href="audio.html">Audio</a>
+      <a href="led-groups.html">LED</a>
+      <a href="calendar.html">Kalender</a>
+      <a href="bachlauf.html" aria-current="page">Bachlauf</a>
+    </nav>
+
+    <div id="status-bar" class="status-bar"></div>
+
+    <section>
+      <h1>Bachlauf - Pumpensteuerung</h1>
+      <p>Direktsteuerung der Pumpe und Test‑Funktionen.</p>
+
+      <div class="row">
+        <label>Testdauer (s) <input id="test-duration" type="number" min="1" value="5" /></label>
+        <button id="test-pulse">Test (5s)</button>
+      </div>
+
+      <div class="row">
+        <button id="start-pump">Starten</button>
+        <button id="stop-pump">Stoppen</button>
+      </div>
+
+      <h2>Status</h2>
+      <pre id="bachlauf-status">lade...</pre>
+    </section>
+  </main>
+</body>
+</html>
