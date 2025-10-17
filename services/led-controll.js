@@ -276,6 +276,17 @@ export async function applyModuleAuto() {
         const a = 9301, c = 49297, m = 233280;
         return ((n * a + c) % m) / m;
       };
+      // Optional: lightweight value-noise function (fast) that can be used instead of pseudo() for smoother
+      // spatial variation. Perlin noise is more natural but heavier; value-noise with smoothstep is cheap
+      // and often good enough for visual flicker. Example usage: val = valueNoise(absolute, t)
+      const valueNoise = (seed, x) => {
+        const xi = Math.floor(x);
+        const xf = x - xi;
+        const smooth = (u) => u * u * (3 - 2 * u);
+        const a = pseudo(seed + xi);
+        const b = pseudo(seed + xi + 1);
+        return a + (b - a) * smooth(xf);
+      };
       const dimHex = (hex, factor) => {
         const h = sanitizeHex(hex, LED_OFF).slice(1);
         const val = parseInt(h, 16) >>> 0;
@@ -305,18 +316,28 @@ export async function applyModuleAuto() {
         for (let offset = 0; offset < count; offset += 1) {
           const absolute = fromIdx + offset;
           const rseed = pseudo(absolute + 1);
-          // speed varies between 0.6 .. 1.8
-          const speed = 0.6 + rseed * 1.2;
-          // position along the color wheel (in color indices)
-          const pos = (baseTick * 0.5 * speed + rseed * colors.length) % colors.length;
+          // speed varies between 0.4 .. 2.2 for more variety
+          const speed = 0.4 + rseed * 1.8;
+          // position along the color palette (fractional index)
+          const pos = (baseTick * 0.45 * speed + rseed * colors.length) % colors.length;
           const idx = Math.floor(pos) % colors.length;
           const next = (idx + 1) % colors.length;
           const t = pos - Math.floor(pos);
           // blend neighbor colors (uses HSL-aware lerpColor)
-          const baseColor = lerpColor(colors[idx], colors[next], t);
-          // small brightness modulation to simulate flame variance (0.75..1.05)
-          const bright = 0.75 + (pseudo(absolute + 97) * 0.3) + Math.sin((baseTick + rseed * 10) * speed) * 0.05;
-          const finalColor = dimHex(baseColor, Math.max(0.4, Math.min(1.2, bright)));
+          let baseColor = lerpColor(colors[idx], colors[next], t);
+
+          // small hue/saturation jitter to avoid banding (blend slightly towards a warmer orange)
+          const jitter = (pseudo(absolute + 51) - 0.5) * 0.25; // -0.125 .. +0.125
+          if (Math.abs(jitter) > 0.001) {
+            // warmColor chosen to bias towards an orange/gold
+            const warmColor = '#FFB347';
+            baseColor = lerpColor(baseColor, warmColor, Math.abs(jitter));
+          }
+
+          // stronger brightness modulation to simulate lively flames (range approx 0.55..1.4)
+          const sinPart = Math.sin((baseTick * 0.5 + rseed * 10) * speed);
+          const bright = 0.55 + (pseudo(absolute + 97) * 0.5) + sinPart * 0.15;
+          const finalColor = dimHex(baseColor, Math.max(0.35, Math.min(1.4, bright)));
           frame[absolute] = finalColor;
         }
       }
