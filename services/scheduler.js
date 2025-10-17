@@ -7,6 +7,7 @@ import ws2812 from './ws2812.js';
 import audioScenario from './audio-scenario.js';
 import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
 import { getMode as readPersistedMode } from './mode-store.js';
+import bachlauf from './bachlauf.js';
 
 const POLL_INTERVAL_MS = 500;
 let timer = null;
@@ -141,13 +142,17 @@ async function tick() {
     const moduleId = resolveModule(event);
     const secondInCycle = computeSecondInCycle(event, now);
 
-    if (moduleId === '1') {
-      await applyModule1();
-    } else if (moduleId === '2') {
-      await applyModule2(secondInCycle);
-    } else {
-      await applyModuleNone();
-    }
+      // Ensure pump follows module state: ON for module 2, OFF otherwise
+      if (moduleId === '1') {
+        await applyModule1();
+        try { bachlauf?.forceOff?.(); } catch (e) { console.warn('[scheduler] bachlauf.forceOff error', e); }
+      } else if (moduleId === '2') {
+        await applyModule2(secondInCycle);
+        try { bachlauf?.forceOn?.(); } catch (e) { console.warn('[scheduler] bachlauf.forceOn error', e); }
+      } else {
+        await applyModuleNone();
+        try { bachlauf?.forceOff?.(); } catch (e) { console.warn('[scheduler] bachlauf.forceOff error', e); }
+      }
   } catch (error) {
     console.error('[scheduler] Tick-Fehler:', error?.message || error);
   }

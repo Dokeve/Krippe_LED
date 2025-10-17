@@ -22,6 +22,7 @@ export function startPump(durationSec) {
   clearAutoOff();
   const dur = typeof durationSec === 'number' && isFinite(durationSec) ? Math.min(durationSec, MAX_DURATION) : null;
 
+  console.log('[bachlauf] startPump durationSec=', dur);
   setPump(true);
   running = true;
   since = new Date().toISOString();
@@ -37,6 +38,28 @@ export function startPump(durationSec) {
 
 export function stopPump() {
   clearAutoOff();
+  console.log('[bachlauf] stopPump called');
+  setPump(false);
+  running = false;
+  since = null;
+  return { running };
+}
+
+// Force the pump ON indefinitely (used by scheduler when Module 2 is active)
+export function forceOn() {
+  clearAutoOff();
+  console.log('[bachlauf] forceOn (scheduler)');
+  setPump(true);
+  running = true;
+  since = new Date().toISOString();
+  autoOffEnd = null;
+  return { running, since };
+}
+
+// Force the pump OFF immediately (used by scheduler when Module 2 becomes inactive)
+export function forceOff() {
+  clearAutoOff();
+  console.log('[bachlauf] forceOff (scheduler)');
   setPump(false);
   running = false;
   since = null;
