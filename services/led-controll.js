@@ -271,14 +271,54 @@ export async function applyModuleAuto() {
   if (fire && Array.isArray(fire.colors) && Array.isArray(fire.scenarios)) {
     const colors = fire.colors.filter((value) => /^#[0-9a-f]{6}$/i.test(value));
     if (colors.length > 0) {
+      // helpers: deterministic pseudo-random in [0,1) per index
+      const pseudo = (n) => {
+        const a = 9301, c = 49297, m = 233280;
+        return ((n * a + c) % m) / m;
+      };
+      const dimHex = (hex, factor) => {
+        const h = sanitizeHex(hex, LED_OFF).slice(1);
+        const val = parseInt(h, 16) >>> 0;
+        let r = (val >> 16) & 0xff;
+        let g = (val >> 8) & 0xff;
+        let b = val & 0xff;
+        r = Math.max(0, Math.min(255, Math.round(r * factor)));
+        g = Math.max(0, Math.min(255, Math.round(g * factor)));
+        b = Math.max(0, Math.min(255, Math.round(b * factor)));
+        const toHex = (n) => n.toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+      };
+
       for (const scenario of fire.scenarios) {
         if (!scenario || scenario.name !== scenarioInfo.name) continue;
         const start = parseInt(scenario.start, 10);
         const end = parseInt(scenario.end, 10);
         if (!withinWindow(scenarioInfo.second, start, end)) continue;
 
-        const phase = colors.length > 0 ? Math.floor(getTick() % colors.length) : 0;
-        applyRangeToFrame(frame, fire.ledFrom | 0, fire.ledTo | 0, colors[phase], null);
+        const fromIdx = Math.max(0, fire.ledFrom | 0);
+        const toIdx = Math.min(frame.length - 1, fire.ledTo | 0);
+        const count = Math.max(0, toIdx - fromIdx + 1);
+        if (count <= 0) continue;
+
+        // Per-LED flicker: each LED has a deterministic speed offset and phase
+        const baseTick = getTick();
+        for (let offset = 0; offset < count; offset += 1) {
+          const absolute = fromIdx + offset;
+          const rseed = pseudo(absolute + 1);
+          // speed varies between 0.6 .. 1.8
+          const speed = 0.6 + rseed * 1.2;
+          // position along the color wheel (in color indices)
+          const pos = (baseTick * 0.5 * speed + rseed * colors.length) % colors.length;
+          const idx = Math.floor(pos) % colors.length;
+          const next = (idx + 1) % colors.length;
+          const t = pos - Math.floor(pos);
+          // blend neighbor colors (uses HSL-aware lerpColor)
+          const baseColor = lerpColor(colors[idx], colors[next], t);
+          // small brightness modulation to simulate flame variance (0.75..1.05)
+          const bright = 0.75 + (pseudo(absolute + 97) * 0.3) + Math.sin((baseTick + rseed * 10) * speed) * 0.05;
+          const finalColor = dimHex(baseColor, Math.max(0.4, Math.min(1.2, bright)));
+          frame[absolute] = finalColor;
+        }
       }
     }
   }
