@@ -62,6 +62,22 @@ function paletteColor(palette, progress, fromColor, toColor) {
   return lerpColor(segmentStart, segmentEnd, localT);
 }
 
+// color helpers for smoothing
+function hexToRgb(hex) {
+  const h = (sanitizeHex(hex, LED_OFF) || '#000000').slice(1);
+  const val = parseInt(h, 16) >>> 0;
+  return { r: (val >> 16) & 0xff, g: (val >> 8) & 0xff, b: val & 0xff };
+}
+function rgbToHex({ r, g, b }) {
+  const toHex = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+}
+function blendHex(a, b, alpha) {
+  const A = hexToRgb(a); const B = hexToRgb(b);
+  const inv = 1 - alpha;
+  return rgbToHex({ r: A.r * inv + B.r * alpha, g: A.g * inv + B.g * alpha, b: A.b * inv + B.b * alpha });
+}
+
 function invalidateCache() {
   lastFrame = null;
 }
@@ -311,15 +327,26 @@ export async function applyModuleAuto() {
         const count = Math.max(0, toIdx - fromIdx + 1);
         if (count <= 0) continue;
 
-        // Per-LED flicker: each LED has a deterministic speed offset and phase
-        const baseTick = getTick();
+  // Per-LED flicker: each LED has a deterministic speed offset and phase
+  const baseTick = getTick();
+  // read optional per-fire configuration (use valueNoise?, speed multiplier)
+  const useValueNoise = !!(fire.useValueNoise);
+  const speedMultiplier = Number.isFinite(Number(fire.speedMultiplier)) ? Number(fire.speedMultiplier) : 10; // default 10x
+        const smoothingAlpha = Number.isFinite(Number(fire.smoothingAlpha)) ? Number(fire.smoothingAlpha) : 0.6;
         for (let offset = 0; offset < count; offset += 1) {
           const absolute = fromIdx + offset;
           const rseed = pseudo(absolute + 1);
-          // speed varies between 0.4 .. 2.2 for more variety
-          const speed = 0.4 + rseed * 1.8;
+          // speed varies between 0.4 .. 2.2 for more variety, scaled by multiplier
+          const speed = (0.4 + rseed * 1.8) * speedMultiplier;
           // position along the color palette (fractional index)
-          const pos = (baseTick * 0.45 * speed + rseed * colors.length) % colors.length;
+          // if value-noise is enabled, use valueNoise for smoother temporal variation
+          let temporal = baseTick * 0.45 * speed;
+          if (useValueNoise) {
+            // valueNoise(seed, x) returns [0..1) — scale it to palette length and combine with temporal
+            const vn = valueNoise(absolute + 13, baseTick * 0.05 * speed);
+            temporal = (vn * colors.length) + (baseTick * 0.02 * speed);
+          }
+          const pos = (temporal + rseed * colors.length) % colors.length;
           const idx = Math.floor(pos) % colors.length;
           const next = (idx + 1) % colors.length;
           const t = pos - Math.floor(pos);
@@ -337,8 +364,13 @@ export async function applyModuleAuto() {
           // stronger brightness modulation to simulate lively flames (range approx 0.55..1.4)
           const sinPart = Math.sin((baseTick * 0.5 + rseed * 10) * speed);
           const bright = 0.55 + (pseudo(absolute + 97) * 0.5) + sinPart * 0.15;
-          const finalColor = dimHex(baseColor, Math.max(0.35, Math.min(1.4, bright)));
-          frame[absolute] = finalColor;
+          const computed = dimHex(baseColor, Math.max(0.35, Math.min(1.4, bright)));
+          // blend with previous frame to reduce blockiness
+          if (lastFrame && Array.isArray(lastFrame) && lastFrame[absolute]) {
+            frame[absolute] = blendHex(lastFrame[absolute], computed, smoothingAlpha);
+          } else {
+            frame[absolute] = computed;
+          }
         }
       }
     }

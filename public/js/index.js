@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { log('Status konnte nicht geladen werden: ' + e.message); }
   }
 
-  // initial fetch and periodic polling (10s)
+  // initial fetch and periodic polling (1s)
   fetchStatus();
-  setInterval(fetchStatus, 10000);
+  setInterval(fetchStatus, 1000);
 
   async function setMode(mode){
     try{

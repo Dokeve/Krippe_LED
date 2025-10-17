@@ -115,7 +115,9 @@ function sanitizeLagerfeuer(lf) {
   const scenarios = Array.isArray(lf.scenarios)
     ? lf.scenarios.map(sanitizeScenario).filter(Boolean)
     : [];
-  return { ledFrom, ledTo, ledCount, colors, scenarios };
+  const useValueNoise = !!lf.useValueNoise;
+  const speedMultiplier = Number.isFinite(Number(lf.speedMultiplier)) ? Math.max(1, Number(lf.speedMultiplier)) : 10;
+  return { ledFrom, ledTo, ledCount, colors, scenarios, useValueNoise, speedMultiplier };
 }
 
 function sanitizeConfig(input = {}) {

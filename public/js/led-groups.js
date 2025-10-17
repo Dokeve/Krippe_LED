@@ -237,6 +237,8 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("lagerfeuer-color4")?.value,
         document.getElementById("lagerfeuer-color5")?.value
       ],
+      useValueNoise: !!document.getElementById("lagerfeuer-use-value-noise")?.checked,
+      speedMultiplier: Number.parseFloat(document.getElementById("lagerfeuer-speed-multiplier")?.value) || 10,
       scenarios: sc
     };
   }
@@ -280,6 +282,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const cols = l.colors || [];
       ['#lagerfeuer-color1','#lagerfeuer-color2','#lagerfeuer-color3','#lagerfeuer-color4','#lagerfeuer-color5']
         .forEach((sel, i) => { const el = document.querySelector(sel); if (el) el.value = cols[i] || el.value; });
+      // load new options (useValueNoise, speedMultiplier)
+      document.getElementById("lagerfeuer-use-value-noise").checked = !!l.useValueNoise;
+      document.getElementById("lagerfeuer-speed-multiplier").value = Number.isFinite(Number(l.speedMultiplier)) ? Number(l.speedMultiplier) : 10;
 
       const transitions = cfg.transitions || {};
       setTransitionPalette('day-night', transitions.dayNight);
