@@ -87,5 +87,7 @@ export default {
   startPump,
   stopPump,
   getStatus,
-  testPulse
+  testPulse,
+  forceOn,
+  forceOff
 };
