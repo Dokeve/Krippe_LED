@@ -5,6 +5,8 @@ import config from '../config.js';
 let pump = null;
 let audioButton = null;
 let audioButtonHandler = null;
+// gewünschter Pumpenzustand, wird gesetzt auch wenn pigpio noch nicht initialisiert ist
+let desiredPumpState = false;
 
 export async function initGpio() {
   try {
@@ -14,8 +16,9 @@ export async function initGpio() {
     const activeHigh = config.gpio?.activeHigh !== false;
 
     pump = new Gpio(pumpPin, { mode: Gpio.OUTPUT });
-    // ensure pump is in OFF state at init according to polarity
-    pump.digitalWrite(activeHigh ? 0 : 1);
+    // apply desired pump state at init according to polarity
+    const initValue = desiredPumpState ? (activeHigh ? 1 : 0) : (activeHigh ? 0 : 1);
+    pump.digitalWrite(initValue);
 
     audioButton = new Gpio(btnPin, {
       mode: Gpio.INPUT,
@@ -38,6 +41,8 @@ export async function initGpio() {
 
 export function setPump(on) {
   try {
+    // Merke den gewünschten Zustand auch wenn pump noch null ist
+    desiredPumpState = !!on;
     if (pump) {
       const activeHigh = config.gpio?.activeHigh !== false;
       const value = on ? (activeHigh ? 1 : 0) : (activeHigh ? 0 : 1);
