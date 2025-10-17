@@ -28,3 +28,10 @@
 
 - **Globaler Footer**
 - Einheitliche Fußzeile mit „Letzte Änderung“ auf allen Seiten einbauen.
+
+## Cleanup (2025-10-17)
+
+- Entfernt: `temp.js` (Duplikat von public/js/led-groups.js)
+- Entfernt: `public/led-groups.js` (veraltete alte UI-Variante; nicht mehr referenziert)
+- Verbleibend: Produktiv sind `public/js/led-groups.js` und die API `routes/led-groups.js`.
+- Nächste Schritte: Bachlauf-Doku liegt unter `docs/BACHLAUF.md`; danach optionale Endpunkte (/api/bachlauf start/stop/status) umsetzen.
