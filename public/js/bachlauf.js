@@ -28,10 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   startBtn?.addEventListener('click', async () => {
-    const dur = prompt('Optional: Dauer in Sekunden (leer = Default)');
+    if (!confirm('Bachlauf starten (läuft bis Sie auf Stopp drücken)?')) return;
     try {
-      const body = dur ? JSON.stringify({ duration: Number(dur) }) : null;
-      const res = await fetch('/api/bachlauf/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body });
+      // Send start without duration => indefinite until stop
+      const res = await fetch('/api/bachlauf/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
       const j = await res.json();
       alert('Start: ' + JSON.stringify(j));
       refresh();

@@ -16,10 +16,20 @@
       <a href="audio.html">Audio</a>
       <a href="led-groups.html">LED</a>
       <a href="calendar.html">Kalender</a>
-      <a href="bachlauf.html" aria-current="page">Bachlauf</a>
+      <a href="star.html">Sternsteuerung</a>
+      <a href="bachlauf.html">Bachlauf</a>
+      <a href="export.html">Export</a>
     </nav>
 
-    <div id="status-bar" class="status-bar"></div>
+    <!-- Unified Status Bar: kurz und informativ -->
+    <div id="status-bar" role="status" aria-live="polite">
+      <div class="status-item" id="status-mode">Modus: <strong id="status-mode-value">-</strong></div>
+      <div class="status-item" id="status-led">LEDs: <span id="status-led-value">-</span></div>
+      <div class="status-item" id="status-audio">Audio: <span id="status-audio-value">-</span></div>
+      <div class="status-item" id="status-calendar">Kalender: <span id="status-calendar-value">-</span></div>
+  <div class="status-item" id="status-scenario"> <span id="status-scenario-value"></span></div>
+  <div class="status-item" id="status-bachlauf">Bachlauf: <span id="status-bachlauf-value">-</span></div>
+    </div>
 
     <section>
       <h1>Bachlauf - Pumpensteuerung</h1>
