@@ -3,7 +3,6 @@ import { Router } from 'express';
 import { getCalendarEvents } from '../services/calendar-store.js';
 import { getActiveScenarioAt, totalCycleSeconds } from '../services/scenario-controll.js';
 import audioScenario from '../services/audio-scenario.js';
-import bachlauf from '../services/bachlauf.js';
 
 const router = Router();
 
@@ -52,11 +51,9 @@ router.get('/', (_req, res) => {
     if (moduleId === '2') {
       const secondInCycle = Math.round(computeSecondInCycle(event, now));
       const scenario = getActiveScenarioAt(secondInCycle);
-      const bach = bachlauf?.getStatus?.() || null;
-      return res.json({ module: '2', scenario, secondInCycle, audio, bachlauf: bach });
+      return res.json({ module: '2', scenario, secondInCycle, audio });
     }
-    const bach = bachlauf?.getStatus?.() || null;
-    return res.json({ module: moduleId, scenario: null, audio, bachlauf: bach });
+    return res.json({ module: moduleId, scenario: null, audio });
   } catch (error) {
     res.status(500).json({ error: 'Status konnte nicht ermittelt werden', detail: error?.message || String(error) });
   }
