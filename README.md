@@ -1,6 +1,6 @@
-# LED Sound Bachlauf - Steuerung & Weboberflaeche
+# LED Sound Bachlauf - Steuerung & Weboberfläche
 
-Der aktuelle Entwicklungsstand liefert ein Express-Grundgeruest mit statischen Seiten, file-basierten REST-APIs (Audio/Kalender/LED-Gruppen) und einem Scheduler, der auf Kalenderereignisse reagiert. Ziel ist ein kompletter Steuerdienst fuer LED-Bachlauf, Audio und Kalender auf dem Raspberry Pi.
+Der aktuelle Entwicklungsstand liefert ein Express-Grundgeruest mit statischen Seiten, file-basierten REST-APIs (Audio/Kalender/LED-Gruppen) und einem Scheduler, der auf Kalenderereignisse reagiert. Ziel ist ein kompletter Steuerdienst für LED-Bachlauf, Audio und Kalender auf dem Raspberry Pi.
 
 ---
 
@@ -16,10 +16,10 @@ Der aktuelle Entwicklungsstand liefert ein Express-Grundgeruest mit statischen S
 - LED-, Audio- und Kalender-Services ueber File-Stores (`services/*-store.js`), `led-controll` nutzt diese Konfigurationen.
 - Deployment-Hilfen: `scripts/install_systemd.sh`, `systemd/nativity.service`.
 
-### Noch offen / naechste Schritte
-- MariaDB-Integration (aktuell File-DB via JSON), Migrationen und vollstaendige Persistenz.
+### Noch offen / nächste Schritte
+- MariaDB-Integration (aktuell File-DB via JSON), Migrationen und vollständige Persistenz.
 - Erweiterte LED-/Audio-Logik (individuelle Szenarien, Lagerfeueranimation, GPIO/Pumpe-Kopplung).
-- Vollstaendiges Kalender-Verhalten (Serienlogik, angrenzende Termine) serverseitig pruefen.
+- Vollständiges Kalender-Verhalten (Serienlogik, angrenzende Termine) serverseitig pruefen.
 - Import/Export-Flows, Authentifizierung, Fehlerhandling.
 
 ---
@@ -30,7 +30,7 @@ Der aktuelle Entwicklungsstand liefert ein Express-Grundgeruest mit statischen S
 git clone <repo-url> led-sound-bachlauf
 cd led-sound-bachlauf
 
-# Abhaengigkeiten installieren
+# Abhängigkeiten installieren
 npm install
 
 # Entwicklungsstart (statische Seiten + APIs + Scheduler)
@@ -44,7 +44,7 @@ npm ci --omit=dev
 sudo ./scripts/install_systemd.sh
 sudo systemctl restart nativity
 ```
-> Hinweis: Fuer produktiven Einsatz sind die oben genannten offenen Punkte (DB-Anbindung, Hardware-Integration) noch umzusetzen.
+> Hinweis: für produktiven Einsatz sind die oben genannten offenen Punkte (DB-Anbindung, Hardware-Integration) noch umzusetzen.
 
 ---
 
@@ -66,7 +66,7 @@ sudo systemctl restart nativity
 ## Weiteres Vorgehen
 1. DB-Layer auf MariaDB heben (DAO/Queries) und File-Stores als Fallback behandeln.
 2. LED-/Audio-Scheduler-Logik erweitern (Szenarien, Lagerfeuer, GPIO-Pumpe, Button).
-3. REST-APIs um Validierung, Fehlercodes sowie Import/Export ergaenzen.
+3. REST-APIs um Validierung, Fehlercodes sowie Import/Export ergänzen.
 4. Frontend mit erweiterten Statusmeldungen/Validierungen ausstatten.
 5. Dokumentation und Tests kontinuierlich nachziehen (`docs/`, `Results.md`).
 

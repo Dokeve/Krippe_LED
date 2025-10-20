@@ -10,7 +10,7 @@
   - MariaDB-Schema finalisieren (Settings, Audio, LED, Kalender).
   - DAO/Query‑Schicht implementieren; File‑Store als Fallback behalten.
 
-## Mittlere Prioritaet
+## Mittlere Priorität
 
 - **LED-/Audio-Steuerung**
   - LED‑Gruppenlogik (Farben, Wand/Szenarien, Lagerfeuer) in `led-controll` erweitern.
