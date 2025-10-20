@@ -6,7 +6,6 @@
   <title>LED-Gruppenverwaltung - LED Sound Bachlauf</title>
   <link rel="stylesheet" href="/styles.css" />
   <script defer src="js/led-groups.js"></script>
-  <script defer src="js/statusbar.js"></script>
   <script defer src="js/footer.js"></script>
 </head>
 <body>
@@ -20,16 +19,6 @@
       <a href="bachlauf.html">Bachlauf</a>
       <a href="export.html">Export</a>
     </nav>
-
-    <!-- Unified Status Bar -->
-    <div id="status-bar" role="status" aria-live="polite">
-      <div class="status-item" id="status-mode">Modus: <strong id="status-mode-value">-</strong></div>
-      <div class="status-item" id="status-led">LEDs: <span id="status-led-value">-</span></div>
-      <div class="status-item" id="status-audio">Audio: <span id="status-audio-value">-</span></div>
-      <div class="status-item" id="status-calendar">Kalender: <span id="status-calendar-value">-</span></div>
-      <div class="status-item" id="status-scenario"><span id="status-scenario-value"></span></div>
-      <div class="status-item" id="status-bachlauf">Bachlauf: <span id="status-bachlauf-value">-</span></div>
-    </div>
 
     <!-- Template fuer Untergruppen -->
     <template id="subgroup-template">

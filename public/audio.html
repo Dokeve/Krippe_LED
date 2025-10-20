@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="/styles.css" />
   <!-- FullCalendar wird hier nicht benötigt; Audio nutzt nur API + Dropdowns -->
   <script defer src="js/audio.js"></script>
-  <script defer src="js/statusbar.js"></script>
   <script defer src="js/footer.js"></script>
 </head>
 <body>
@@ -24,14 +23,6 @@
     </nav>
 
   <main class="container">
-    <div id="status-bar" role="status" aria-live="polite">
-      <div class="status-item" id="status-mode">Modus: <strong id="status-mode-value">-</strong></div>
-      <div class="status-item" id="status-led">LEDs: <span id="status-led-value">-</span></div>
-      <div class="status-item" id="status-audio">Audio: <span id="status-audio-value">-</span></div>
-      <div class="status-item" id="status-calendar">Kalender: <span id="status-calendar-value">-</span></div>
-      <div class="status-item" id="status-scenario"><span id="status-scenario-value"></span></div>
-      <div class="status-item" id="status-bachlauf">Bachlauf: <span id="status-bachlauf-value">-</span></div>
-    </div>
     <h1>Audioverwaltung</h1>
 
     <!-- A. Audiosprachdateien -->
