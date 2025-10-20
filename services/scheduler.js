@@ -7,6 +7,7 @@ import ws2812 from './ws2812.js';
 import audioScenario from './audio-scenario.js';
 import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
 import { getMode as readPersistedMode } from './mode-store.js';
+import bachlauf from './bachlauf.js';
 
 const POLL_INTERVAL_MS = 500;
 let timer = null;
@@ -80,6 +81,8 @@ async function applyModuleNone() {
   audioScenario.stopBackground();
   lastModule = null;
   logPhase(null, null);
+  // notify bachlauf service that module changed
+  try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
 }
 
 async function applyModule1() {
@@ -90,6 +93,7 @@ async function applyModule1() {
     audioScenario.stopBackground();
     lastModule = '1';
     logPhase('1', null);
+    try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
   }
 }
 
@@ -102,6 +106,7 @@ async function applyModule2(secondInCycle) {
   await audioScenario.tickAudio(secondInCycle);
   lastModule = '2';
   logPhase('2', scenario);
+  try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(true); } catch (e) { /* ignore */ }
 }
 
 async function tick() {

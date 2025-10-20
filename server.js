@@ -108,6 +108,7 @@ const expectedRouters = [
   { file: 'status.js',     base: '/api/status' },
   { file: 'star.js',       base: '/api/star' },
   { file: 'files.js',      base: '/api/list-files' }
+  ,{ file: 'bachlauf.js',  base: '/api/bachlauf' }
 ];
 
 for (const { file, base } of expectedRouters) {
@@ -158,6 +159,18 @@ try {
 
 try {
   await initGpio();
+  // init bachlauf service if present
+  try {
+    const bachlaufPath = join(__dirname, 'services', 'bachlauf.js');
+    if (fs.existsSync(bachlaufPath)) {
+      const b = await import(pathToFileURL(bachlaufPath).href);
+      const svc = b.default ?? b;
+      if (typeof svc.init === 'function') {
+        svc.init();
+        console.log('[bachlauf] service initialized');
+      }
+    }
+  } catch (e) { console.warn('[bachlauf] init failed', e?.message || e); }
   onAudioButton(async () => {
     const lastModule = schedulerModule?.getLastModule?.() ?? null;
     if (lastModule !== '2') {
