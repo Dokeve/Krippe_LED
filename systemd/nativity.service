@@ -1,19 +1,23 @@
 [Unit]
-Description=Nativity Web Service (Krippe)
+Description=Krippe Webserver (Express, Port 3000)
 After=network-online.target mariadb.service
 Wants=network-online.target
 
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
 [Service]
 Type=simple
-User=pi
+User=root
 WorkingDirectory=/home/singer/led-sound-bachlauf
-ExecStart=/usr/bin/npm start --silent
-EnvironmentFile=/home/singer/led-sound-bachlauf/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/node server.js
 Restart=on-failure
-RestartSec=3
+RestartSec=10
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=nativity
 
 [Install]
 WantedBy=multi-user.target
