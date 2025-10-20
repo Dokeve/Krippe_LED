@@ -286,6 +286,21 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("lagerfeuer-use-value-noise").checked = !!l.useValueNoise;
       document.getElementById("lagerfeuer-speed-multiplier").value = Number.isFinite(Number(l.speedMultiplier)) ? Number(l.speedMultiplier) : 10;
 
+      // Render lagerfeuer scenarios into the UI so they can be edited and saved again
+      const lfHost = document.getElementById('lagerfeuer-scenarios');
+      if (lfHost) {
+        lfHost.innerHTML = '';
+        (l.scenarios || []).forEach(s => {
+          const row = scenarioRowTemplate();
+          row.querySelector('.scenario-select').value = s.name || '';
+          row.querySelector('.scenario-start').value = s.start ?? '';
+          row.querySelector('.scenario-end').value = s.end ?? '';
+          // remove led-selection for lagerfeuer rows (not needed)
+          const ledSel = row.querySelector('.led-selection'); if (ledSel) ledSel.remove();
+          lfHost.appendChild(row);
+        });
+      }
+
       const transitions = cfg.transitions || {};
       setTransitionPalette('day-night', transitions.dayNight);
       setTransitionPalette('night-day', transitions.nightDay);
@@ -316,7 +331,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".toggle-group").forEach((button) => {
     const targetId = button.dataset.target;
     if (!targetId) return;
-    updateToggleButton(button, true);
+    // Start collapsed by default on first load
+    const target = document.getElementById(targetId);
+    if (target && !target.classList.contains('collapsed')) {
+      target.classList.add('collapsed');
+    }
+    updateToggleButton(button, false);
     button.addEventListener("click", () => toggleGroupArea(button, targetId));
   });
 
