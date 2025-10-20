@@ -10,7 +10,6 @@ async function api(path, method='GET', body=null) {
 async function refreshStatus() {
   try {
     const s = await api('/status');
-    document.getElementById('status-bachlauf-value').textContent = s.pumpState || '-';
     document.getElementById('bachlauf-source').textContent = s.manualOverride ? 'manual' : 'auto';
     document.getElementById('bachlauf-manual').textContent = s.manualOverride || '-';
   } catch (e) {
