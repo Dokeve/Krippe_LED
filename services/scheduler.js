@@ -121,6 +121,8 @@ async function tick() {
       await ledControll.applyModuleOn();
       audioScenario.stopBackground();
       lastModule = null;
+      // Ensure bachlauf doesn't run while LEDs are forced on
+      try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
       return;
     }
     if (persistedMode === 'off') {
@@ -132,6 +134,8 @@ async function tick() {
       await ledControll.applyModuleOff();
       audioScenario.stopBackground();
       lastModule = null;
+      // Ensure bachlauf doesn't run while LEDs are forced off
+      try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
       return;
     }
     lastManualMode = null;

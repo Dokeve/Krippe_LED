@@ -64,10 +64,20 @@ router.get('/', (_req, res) => {
     const event = findActiveEvent(now);
     const moduleId = resolveModule(event);
     const audio = audioScenario?.getAudioStatus?.() || {};
+    // include persisted LED mode if available (read mode.json)
+    let persistedMode = null;
+    try {
+      const cfgPath = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'data', 'mode.json');
+      if (fs.existsSync(cfgPath)) {
+        const raw = fs.readFileSync(cfgPath, 'utf8');
+        const j = JSON.parse(raw || '{}');
+        persistedMode = typeof j?.mode === 'string' ? j.mode : null;
+      }
+    } catch (e) { /* ignore */ }
     if (moduleId === '2') {
       const secondInCycle = Math.round(computeSecondInCycle(event, now));
       const scenario = getActiveScenarioAt(secondInCycle);
-      const out = { module: '2', scenario, secondInCycle, audio };
+  const out = { module: '2', scenario, secondInCycle, audio, persistedMode };
       if (bachlaufService && typeof bachlaufService.getStatus === 'function') {
         const b = bachlaufService.getStatus();
         out.bachlauf = {
@@ -79,7 +89,7 @@ router.get('/', (_req, res) => {
       }
       return res.json(out);
     }
-    const out = { module: moduleId, scenario: null, audio };
+  const out = { module: moduleId, scenario: null, audio, persistedMode };
     if (bachlaufService && typeof bachlaufService.getStatus === 'function') {
       const b = bachlaufService.getStatus();
       out.bachlauf = {
