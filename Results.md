@@ -31,3 +31,10 @@
 4. Import/Export, Auth und Fehlerhandling einbauen.
 
 - .env-Zykluszeiten werden nun über dotenv geladen (npm install erforderlich).
+
+## Kurzfassung: On‑Pi Tests (Bachlauf)
+
+- `pigpiod` Startprobleme (stale PID/socket) wurden identifiziert und bereinigt. Nach Neustart von pigpiod läuft der Service.
+- `pigs` CLI als Fallback getestet: `pigs w <pin> <value>` schaltet den Pin, `pigs r <pin>` liest den Status.
+- Physischer Test auf Test‑Hardware (BCM22): Relais zeigte Active‑LOW Verhalten (im aktuellen Setup `0` = ON). Achte beim Einsatz eines anderen Relay‑Boards auf invertierte Logik und setze `PUMP_ACTIVE_HIGH` entsprechend.
+- API‑Tests mit `curl` bestätigten Verhalten von `/api/bachlauf/status` und `/api/bachlauf/manual`.

@@ -16,9 +16,15 @@ Der aktuelle Entwicklungsstand liefert ein Express-Grundgeruest mit statischen S
 - LED-, Audio- und Kalender-Services ueber File-Stores (`services/*-store.js`), `led-controll` nutzt diese Konfigurationen.
 - Deployment-Hilfen: `scripts/install_systemd.sh`, `systemd/nativity.service`.
 
+- Bachlauf / Pumpe: `services/bachlauf.js` implementiert die automatische und manuelle Pumpensteuerung; API unter `/api/bachlauf` (Status + manueller Override).
+- GPIO Robustheit: `services/gpio.js` enthält Retry/Wait‑Logik für `pigpiod` und einen `pigs` CLI‑Fallback, so dass die Hardware sich auch bei Daemon‑Startproblemen zuverlässig schalten lässt.
+- Frontend: `public/js/statusbar.js` ist die zentrale Statusquelle; `public/js/bachlauf.js` steuert nur die Bachlauf‑UI (vermeidet konkurrierende DOM‑Schreibzugriffe).
+
 ### Noch offen / nächste Schritte
 - MariaDB-Integration (aktuell File-DB via JSON), Migrationen und vollständige Persistenz.
 - Erweiterte LED-/Audio-Logik (individuelle Szenarien, Lagerfeueranimation, GPIO/Pumpe-Kopplung).
+ - Bachlauf: Tests auf Pi abgeschlossen; PR `feature/bachlauf-redesign -> develop` vorbereiten und CI laufen lassen.
+ - UI: Lagerfeuer‑Szenarien‑Lade/Save‑Logik stabilisiert (kein LED‑Auswahlfeld mehr für Lagerfeuer‑Szenarien).
 - Vollständiges Kalender-Verhalten (Serienlogik, angrenzende Termine) serverseitig pruefen.
 - Import/Export-Flows, Authentifizierung, Fehlerhandling.
 

@@ -6,6 +6,8 @@
   - WS2812 real testen (Init, Modus "An" vs. "Automatisch", Lagerfeuer‑Platzhalter prüfen).
   - GPIOs prüfen: Pumpenrelais, Audio‑Button, Helligkeit/LED_COUNT an echte Werte anpassen.
   - [x] Auto-Modus entprellt (nur bei Zustandswechsel wird erneut gerendert).
+  - [x] Bachlauf (Pumpensteuerung) implementiert; Tests auf Raspberry Pi durchgeführt (siehe `docs/BACHLAUF_SPEC.md`).
+  - [x] GPIO: robuste Initialisierung + `pigs` CLI‑Fallback implementiert in `services/gpio.js`.
 - **Persistenz/DB**
   - MariaDB-Schema finalisieren (Settings, Audio, LED, Kalender).
   - DAO/Query‑Schicht implementieren; File‑Store als Fallback behalten.
