@@ -252,3 +252,16 @@ pre#log-output { white-space: pre-wrap; background: #081629; border: 1px solid v
   display: flex;
   justify-content: flex-end;
 }
+
+/* Bachlauf badge for calendar events */
+.bachlauf-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; min-width:18px; min-height:18px; border-radius:4px;
+  font-size:12px; margin-right:6px;
+}
+.bachlauf-on { background: rgba(0,120,200,0.08); color:#1e90ff; }
+.bachlauf-off { background: rgba(128,128,128,0.06); color:#9aa0a6; text-decoration:line-through; }
+.fc-event .fc-event-inner { display:flex; align-items:center; gap:6px; }
+.fc-event .fc-event-title-text { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.calendar-legend { font-size:0.92rem; color:var(--muted); }
