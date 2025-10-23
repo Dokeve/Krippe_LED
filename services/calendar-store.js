@@ -18,7 +18,10 @@ function sanitizeEvent(ev) {
   const seriesRoot = typeof ev.seriesRoot === 'string' ? ev.seriesRoot : null;
   const weekly = Boolean(ev.weekly);
   const allDay = Boolean(ev.allDay);
-  return { id, module, title, start, end, seriesRoot, weekly, allDay };
+  // bachlauf: whether the Bachlauf (pump) should run for this event when module 2 is active.
+  // Default: true (keep current behavior). If explicitly set to false, the pump will be suppressed.
+  const bachlauf = Object.prototype.hasOwnProperty.call(ev, 'bachlauf') ? Boolean(ev.bachlauf) : true;
+  return { id, module, title, start, end, seriesRoot, weekly, allDay, bachlauf };
 }
 
 function sanitizeEventList(list) {
