@@ -216,29 +216,32 @@ document.addEventListener("DOMContentLoaded", () => {
     return groups;
   }
 
-  /* ------------ Lagerfeuer ------------ */
-  function readLagerfeuerUI() {
+  /* ------------ Lagerfeuer (group-specific helpers) ------------ */
+  function readGroupLagerfeuerUI(prefix) {
+    // prefix example: 'advent' or 'weihnacht'
     const sc = [];
-    document.querySelectorAll("#lagerfeuer-scenarios .scenario-row").forEach(row=>{
+    const host = document.getElementById(prefix + '-lagerfeuer-scenarios');
+    if (host) host.querySelectorAll('.scenario-row').forEach(row => {
       sc.push({
-        name: row.querySelector(".scenario-select")?.value||'',
-        start: parseInt(row.querySelector(".scenario-start")?.value||0,10),
-        end: parseInt(row.querySelector(".scenario-end")?.value||0,10),
+        name: row.querySelector('.scenario-select')?.value||'',
+        start: parseInt(row.querySelector('.scenario-start')?.value||0,10),
+        end: parseInt(row.querySelector('.scenario-end')?.value||0,10)
       });
     });
+    const cols = [
+      document.getElementById(prefix + '-lagerfeuer-color1')?.value,
+      document.getElementById(prefix + '-lagerfeuer-color2')?.value,
+      document.getElementById(prefix + '-lagerfeuer-color3')?.value,
+      document.getElementById(prefix + '-lagerfeuer-color4')?.value,
+      document.getElementById(prefix + '-lagerfeuer-color5')?.value
+    ];
     return {
-      ledFrom: parseInt(document.getElementById("lagerfeuer-led-from")?.value||0,10),
-      ledTo: parseInt(document.getElementById("lagerfeuer-led-to")?.value||0,10),
-      ledCount: parseInt(document.getElementById("lagerfeuer-led-count")?.value||0,10),
-      colors: [
-        document.getElementById("lagerfeuer-color1")?.value,
-        document.getElementById("lagerfeuer-color2")?.value,
-        document.getElementById("lagerfeuer-color3")?.value,
-        document.getElementById("lagerfeuer-color4")?.value,
-        document.getElementById("lagerfeuer-color5")?.value
-      ],
-      useValueNoise: !!document.getElementById("lagerfeuer-use-value-noise")?.checked,
-      speedMultiplier: Number.parseFloat(document.getElementById("lagerfeuer-speed-multiplier")?.value) || 10,
+      ledFrom: parseInt(document.getElementById(prefix + '-lagerfeuer-led-from')?.value||0,10),
+      ledTo: parseInt(document.getElementById(prefix + '-lagerfeuer-led-to')?.value||0,10),
+      ledCount: parseInt(document.getElementById(prefix + '-lagerfeuer-led-count')?.value||0,10),
+      colors: cols,
+      useValueNoise: !!document.getElementById(prefix + '-lagerfeuer-use-value-noise')?.checked,
+      speedMultiplier: Number.parseFloat(document.getElementById(prefix + '-lagerfeuer-speed-multiplier')?.value) || 10,
       scenarios: sc
     };
   }
@@ -250,7 +253,10 @@ document.addEventListener("DOMContentLoaded", () => {
       weihnachtActive: document.getElementById("group-weihnacht-active")?.checked || false,
       advent: readGroupUI(document.getElementById("advent-subgroups")),
       weihnacht: readGroupUI(document.getElementById("weihnacht-subgroups")),
-      lagerfeuer: readLagerfeuerUI(),
+      adventLagerfeuer: readGroupLagerfeuerUI('advent'),
+      weihnachtLagerfeuer: readGroupLagerfeuerUI('weihnacht'),
+      // keep legacy 'lagerfeuer' for backward compatibility (set to advent by default)
+      lagerfeuer: readGroupLagerfeuerUI('advent'),
       transitions: {
         dayNight: readTransitionPalette('day-night'),
         nightDay: readTransitionPalette('night-day')
@@ -275,31 +281,39 @@ document.addEventListener("DOMContentLoaded", () => {
       (cfg.advent||[]).forEach(sg => addSubgroup("advent-subgroups", sg));
       (cfg.weihnacht||[]).forEach(sg => addSubgroup("weihnacht-subgroups", sg));
 
-      const l = cfg.lagerfeuer || {};
-      document.getElementById("lagerfeuer-led-from").value = l.ledFrom ?? 0;
-      document.getElementById("lagerfeuer-led-to").value = l.ledTo ?? 0;
-      document.getElementById("lagerfeuer-led-count").value = l.ledCount ?? 0;
-      const cols = l.colors || [];
-      ['#lagerfeuer-color1','#lagerfeuer-color2','#lagerfeuer-color3','#lagerfeuer-color4','#lagerfeuer-color5']
-        .forEach((sel, i) => { const el = document.querySelector(sel); if (el) el.value = cols[i] || el.value; });
-      // load new options (useValueNoise, speedMultiplier)
-      document.getElementById("lagerfeuer-use-value-noise").checked = !!l.useValueNoise;
-      document.getElementById("lagerfeuer-speed-multiplier").value = Number.isFinite(Number(l.speedMultiplier)) ? Number(l.speedMultiplier) : 10;
+      // Load group-specific lagerfeuer settings; fall back to legacy cfg.lagerfeuer when needed
+      const advLf = cfg.adventLagerfeuer || cfg.lagerfeuer || {};
+      const weiLf = cfg.weihnachtLagerfeuer || cfg.lagerfeuer || {};
 
-      // Render lagerfeuer scenarios into the UI so they can be edited and saved again
-      const lfHost = document.getElementById('lagerfeuer-scenarios');
-      if (lfHost) {
-        lfHost.innerHTML = '';
-        (l.scenarios || []).forEach(s => {
-          const row = scenarioRowTemplate();
-          row.querySelector('.scenario-select').value = s.name || '';
-          row.querySelector('.scenario-start').value = s.start ?? '';
-          row.querySelector('.scenario-end').value = s.end ?? '';
-          // remove led-selection for lagerfeuer rows (not needed)
-          const ledSel = row.querySelector('.led-selection'); if (ledSel) ledSel.remove();
-          lfHost.appendChild(row);
-        });
+      // helper to populate a group's lagerfeuer UI
+      function populateGroupLagerfeuer(prefix, data) {
+        document.getElementById(prefix + '-lagerfeuer-led-from').value = data.ledFrom ?? 0;
+        document.getElementById(prefix + '-lagerfeuer-led-to').value = data.ledTo ?? 0;
+        document.getElementById(prefix + '-lagerfeuer-led-count').value = data.ledCount ?? 0;
+        const cols = data.colors || [];
+        for (let i=1;i<=5;i++) {
+          const sel = document.getElementById(prefix + '-lagerfeuer-color' + i);
+          if (sel) sel.value = cols[i-1] || sel.value;
+        }
+        document.getElementById(prefix + '-lagerfeuer-use-value-noise').checked = !!data.useValueNoise;
+        document.getElementById(prefix + '-lagerfeuer-speed-multiplier').value = Number.isFinite(Number(data.speedMultiplier)) ? Number(data.speedMultiplier) : 10;
+
+        const host = document.getElementById(prefix + '-lagerfeuer-scenarios');
+        if (host) {
+          host.innerHTML = '';
+          (data.scenarios || []).forEach(s => {
+            const row = scenarioRowTemplate();
+            row.querySelector('.scenario-select').value = s.name || '';
+            row.querySelector('.scenario-start').value = s.start ?? '';
+            row.querySelector('.scenario-end').value = s.end ?? '';
+            const ledSel = row.querySelector('.led-selection'); if (ledSel) ledSel.remove();
+            host.appendChild(row);
+          });
+        }
       }
+
+      populateGroupLagerfeuer('advent', advLf);
+      populateGroupLagerfeuer('weihnacht', weiLf);
 
       const transitions = cfg.transitions || {};
       setTransitionPalette('day-night', transitions.dayNight);

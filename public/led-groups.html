@@ -96,32 +96,62 @@
       </div>
     </section>
 
-    <section class="group-section" id="group-lagerfeuer">
-      <h2>Lagerfeuer</h2>
-      <div id="lagerfeuer-settings" class="lagerfeuer-settings">
+    <section class="group-section" id="group-lagerfeuer-advent">
+      <h2>Lagerfeuer — Advent (Gruppe)</h2>
+      <div id="advent-lagerfeuer-settings" class="lagerfeuer-settings">
         <div class="row">
-          <label>LED von <input type="number" id="lagerfeuer-led-from" min="0" value="0" /></label>
-          <label>LED bis <input type="number" id="lagerfeuer-led-to" min="0" value="0" /></label>
-          <label>LED Anzahl <input type="number" id="lagerfeuer-led-count" min="0" value="0" /></label>
+          <label>LED von <input type="number" id="advent-lagerfeuer-led-from" min="0" value="0" /></label>
+          <label>LED bis <input type="number" id="advent-lagerfeuer-led-to" min="0" value="0" /></label>
+          <label>LED Anzahl <input type="number" id="advent-lagerfeuer-led-count" min="0" value="0" /></label>
         </div>
         <div class="row">
-          <label>Farbe 1 <input type="color" id="lagerfeuer-color1" value="#FF4500" /></label>
-          <label>Farbe 2 <input type="color" id="lagerfeuer-color2" value="#FF8C00" /></label>
-          <label>Farbe 3 <input type="color" id="lagerfeuer-color3" value="#FFD700" /></label>
-          <label>Farbe 4 <input type="color" id="lagerfeuer-color4" value="#FF6347" /></label>
-          <label>Farbe 5 <input type="color" id="lagerfeuer-color5" value="#FFFFFF" /></label>
+          <label>Farbe 1 <input type="color" id="advent-lagerfeuer-color1" value="#FF4500" /></label>
+          <label>Farbe 2 <input type="color" id="advent-lagerfeuer-color2" value="#FF8C00" /></label>
+          <label>Farbe 3 <input type="color" id="advent-lagerfeuer-color3" value="#FFD700" /></label>
+          <label>Farbe 4 <input type="color" id="advent-lagerfeuer-color4" value="#FF6347" /></label>
+          <label>Farbe 5 <input type="color" id="advent-lagerfeuer-color5" value="#FFFFFF" /></label>
         </div>
         <div class="row">
-          <label>Value-Noise <input type="checkbox" id="lagerfeuer-use-value-noise" /></label>
-          <label>Speed-Multiplier <input type="number" id="lagerfeuer-speed-multiplier" min="1" value="10" /></label>
+          <label>Value-Noise <input type="checkbox" id="advent-lagerfeuer-use-value-noise" /></label>
+          <label>Speed-Multiplier <input type="number" id="advent-lagerfeuer-speed-multiplier" min="1" value="10" /></label>
         </div>
         <div class="scenarios-controls">
-          <button type="button" id="add-lagerfeuer-scenario">Szenario hinzufügen</button>
+          <button type="button" id="add-advent-lagerfeuer-scenario">Szenario hinzufügen</button>
         </div>
-        <div id="lagerfeuer-scenarios" class="scenarios-list"></div>
+        <div id="advent-lagerfeuer-scenarios" class="scenarios-list"></div>
         <div class="group-controls">
-          <button id="save-lagerfeuer" type="button">Speichern</button>
-          <button id="test-lagerfeuer" type="button">Testen (Simulation)</button>
+          <button id="save-advent-lagerfeuer" type="button">Speichern</button>
+          <button id="test-advent-lagerfeuer" type="button">Testen (Simulation)</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="group-section" id="group-lagerfeuer-weihnacht">
+      <h2>Lagerfeuer — Weihnachtszeit (Gruppe)</h2>
+      <div id="weihnacht-lagerfeuer-settings" class="lagerfeuer-settings">
+        <div class="row">
+          <label>LED von <input type="number" id="weihnacht-lagerfeuer-led-from" min="0" value="0" /></label>
+          <label>LED bis <input type="number" id="weihnacht-lagerfeuer-led-to" min="0" value="0" /></label>
+          <label>LED Anzahl <input type="number" id="weihnacht-lagerfeuer-led-count" min="0" value="0" /></label>
+        </div>
+        <div class="row">
+          <label>Farbe 1 <input type="color" id="weihnacht-lagerfeuer-color1" value="#FF4500" /></label>
+          <label>Farbe 2 <input type="color" id="weihnacht-lagerfeuer-color2" value="#FF8C00" /></label>
+          <label>Farbe 3 <input type="color" id="weihnacht-lagerfeuer-color3" value="#FFD700" /></label>
+          <label>Farbe 4 <input type="color" id="weihnacht-lagerfeuer-color4" value="#FF6347" /></label>
+          <label>Farbe 5 <input type="color" id="weihnacht-lagerfeuer-color5" value="#FFFFFF" /></label>
+        </div>
+        <div class="row">
+          <label>Value-Noise <input type="checkbox" id="weihnacht-lagerfeuer-use-value-noise" /></label>
+          <label>Speed-Multiplier <input type="number" id="weihnacht-lagerfeuer-speed-multiplier" min="1" value="10" /></label>
+        </div>
+        <div class="scenarios-controls">
+          <button type="button" id="add-weihnacht-lagerfeuer-scenario">Szenario hinzufügen</button>
+        </div>
+        <div id="weihnacht-lagerfeuer-scenarios" class="scenarios-list"></div>
+        <div class="group-controls">
+          <button id="save-weihnacht-lagerfeuer" type="button">Speichern</button>
+          <button id="test-weihnacht-lagerfeuer" type="button">Testen (Simulation)</button>
         </div>
       </div>
     </section>
