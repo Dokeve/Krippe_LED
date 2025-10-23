@@ -7,6 +7,7 @@ import ws2812 from './ws2812.js';
 import audioScenario from './audio-scenario.js';
 import { getActiveScenarioAt, totalCycleSeconds } from './scenario-controll.js';
 import { getMode as readPersistedMode } from './mode-store.js';
+import bachlauf from './bachlauf.js';
 
 const POLL_INTERVAL_MS = 500;
 let timer = null;
@@ -80,6 +81,8 @@ async function applyModuleNone() {
   audioScenario.stopBackground();
   lastModule = null;
   logPhase(null, null);
+  // notify bachlauf service that module changed
+  try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
 }
 
 async function applyModule1() {
@@ -90,6 +93,7 @@ async function applyModule1() {
     audioScenario.stopBackground();
     lastModule = '1';
     logPhase('1', null);
+    try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
   }
 }
 
@@ -102,6 +106,7 @@ async function applyModule2(secondInCycle) {
   await audioScenario.tickAudio(secondInCycle);
   lastModule = '2';
   logPhase('2', scenario);
+  try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(true); } catch (e) { /* ignore */ }
 }
 
 async function tick() {
@@ -116,6 +121,8 @@ async function tick() {
       await ledControll.applyModuleOn();
       audioScenario.stopBackground();
       lastModule = null;
+      // Ensure bachlauf doesn't run while LEDs are forced on
+      try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
       return;
     }
     if (persistedMode === 'off') {
@@ -127,6 +134,8 @@ async function tick() {
       await ledControll.applyModuleOff();
       audioScenario.stopBackground();
       lastModule = null;
+      // Ensure bachlauf doesn't run while LEDs are forced off
+      try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
       return;
     }
     lastManualMode = null;
@@ -141,11 +150,27 @@ async function tick() {
     const moduleId = resolveModule(event);
     const secondInCycle = computeSecondInCycle(event, now);
 
+    // If this event explicitly disables bachlauf, ensure pump is suppressed even for module 2
+    const eventSuppressesBachlauf = Object.prototype.hasOwnProperty.call(event, 'bachlauf') ? (event.bachlauf === false) : false;
+
       // Ensure pump follows module state: ON for module 2, OFF otherwise
       if (moduleId === '1') {
         await applyModule1();
       } else if (moduleId === '2') {
-        await applyModule2(secondInCycle);
+        if (eventSuppressesBachlauf) {
+          // Apply module 2 visuals/audio but ensure pump is not activated
+          await ensureLedsInitialized();
+          const scenario = getActiveScenarioAt(secondInCycle);
+          ledControll.setMode('auto');
+          ledControll.setTick(secondInCycle);
+          await ledControll.apply();
+          await audioScenario.tickAudio(secondInCycle);
+          lastModule = '2';
+          logPhase('2', scenario);
+          try { if (typeof bachlauf?.handleModule2 === 'function') bachlauf.handleModule2(false); } catch (e) { /* ignore */ }
+        } else {
+          await applyModule2(secondInCycle);
+        }
       } else {
         await applyModuleNone();
       }

@@ -15,10 +15,16 @@
       if(!r.ok) throw new Error(r.status + ' ' + r.statusText);
       const j = await r.json();
 
-      const modeShort = j.module === '2' ? 'Auto' : (j.module === '1' ? 'On' : (j.module === null ? 'Off' : String(j.module)));
+      // Prefer persistedMode (on/off/auto) over inferred module-based label when present
+      const persisted = j.persistedMode;
+      const modeShort = typeof persisted === 'string' ? (persisted === 'auto' ? 'Auto' : (persisted === 'on' ? 'AN' : 'AUS'))
+                        : (j.module === '2' ? 'Auto' : (j.module === '1' ? 'AN' : (j.module === null ? 'AUS' : String(j.module))));
       safeText(modeEl(), modeShort);
 
-      safeText(ledEl(), j.module === '2' ? 'Auto (Modul 2)' : (j.module === '1' ? 'On (Modul 1)' : (j.module === null ? 'Off' : String(j.module))));
+      const ledLabel = typeof persisted === 'string'
+        ? (persisted === 'auto' ? (j.module === '2' ? 'Auto (Modul 2)' : 'Auto') : (persisted === 'on' ? 'AN' : 'AUS'))
+        : (j.module === '2' ? 'Auto (Modul 2)' : (j.module === '1' ? 'AN (Modul 1)' : (j.module === null ? 'AUS' : String(j.module))));
+      safeText(ledEl(), ledLabel);
 
       try{
         const audio = j.audio || {};
@@ -73,4 +79,6 @@
   fetchStatus();
   setInterval(fetchStatus, 1000);
   window.addEventListener('load', fetchStatus);
+  // signal that this script is the authoritative statusbar writer
+  try { window.NATIVITY_STATUSBAR = true; } catch(_) {}
 })();

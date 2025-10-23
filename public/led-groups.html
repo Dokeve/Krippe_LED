@@ -20,7 +20,7 @@
       <a href="export.html">Export</a>
     </nav>
 
-    <!-- Template fuer Untergruppen -->
+    <!-- Template für Untergruppen -->
     <template id="subgroup-template">
       <article class="subgroup" data-template="true">
         <div class="subgroup-header">
@@ -35,7 +35,7 @@
           <div class="sub-actions">
             <button type="button" class="toggle-details">Details</button>
             <button type="button" class="save-subgroup">Speichern</button>
-            <button type="button" class="delete-subgroup">Loeschen</button>
+            <button type="button" class="delete-subgroup">Löschen</button>
           </div>
         </div>
 
@@ -43,7 +43,7 @@
           <summary>Zeitszenarios (Sekunden im Szenario) + LED-Auswahl</summary>
           <div class="scenarios-list"></div>
           <div class="scenarios-controls">
-            <button type="button" class="add-scenario-row">Szenario hinzufuegen</button>
+            <button type="button" class="add-scenario-row">Szenario hinzufügen</button>
           </div>
 
           <!-- Individuelle LED-Farben (nur Quadrate) -->
@@ -51,7 +51,7 @@
             <summary>Individuelle LED-Farben (optional)</summary>
             <div class="row" style="margin-bottom:8px;">
               <button type="button" class="gen-individual-colors">Farbfelder nach LED-Anzahl erzeugen</button>
-              <span style="opacity:.8;margin-left:8px;">Wird nur ausgewertet, wenn befuellt. Leere Felder nutzen die Grundfarbe oder Szenario-Regeln.</span>
+              <span style="opacity:.8;margin-left:8px;">Wird nur ausgewertet, wenn befüllt. Leere Felder nutzen die Grundfarbe oder Szenario-Regeln.</span>
             </div>
 
             <div class="led-color-palette" aria-live="polite"></div>
@@ -75,7 +75,7 @@
       <div id="group-advent-body" class="group-body">
         <div id="advent-subgroups" class="subgroup-container"></div>
         <div class="group-controls">
-          <button id="add-advent-subgroup" type="button">Untergruppe hinzufuegen</button>
+          <button id="add-advent-subgroup" type="button">Untergruppe hinzufügen</button>
           <button id="save-advent-group" type="button">Gruppe speichern</button>
         </div>
       </div>
@@ -90,7 +90,7 @@
       <div id="group-weihnacht-body" class="group-body">
         <div id="weihnacht-subgroups" class="subgroup-container"></div>
         <div class="group-controls">
-          <button id="add-weihnacht-subgroup" type="button">Untergruppe hinzufuegen</button>
+          <button id="add-weihnacht-subgroup" type="button">Untergruppe hinzufügen</button>
           <button id="save-weihnacht-group" type="button">Gruppe speichern</button>
         </div>
       </div>
@@ -116,7 +116,7 @@
           <label>Speed-Multiplier <input type="number" id="lagerfeuer-speed-multiplier" min="1" value="10" /></label>
         </div>
         <div class="scenarios-controls">
-          <button type="button" id="add-lagerfeuer-scenario">Szenario hinzufuegen</button>
+          <button type="button" id="add-lagerfeuer-scenario">Szenario hinzufügen</button>
         </div>
         <div id="lagerfeuer-scenarios" class="scenarios-list"></div>
         <div class="group-controls">
@@ -127,8 +127,8 @@
     </section>
 
     <section class="group-section" id="transition-settings">
-      <h2>Farbverlaeufe fuer Tag und Nacht</h2>
-      <p class="hint">Die hier gewaehlten Farben bestimmen den Verlauf fuer die Szenarien "Tag-Nacht" und "Nacht-Tag".</p>
+      <h2>Farbverläufe für Tag und Nacht</h2>
+      <p class="hint">Die hier gewählten Farben bestimmen den Verlauf für die Szenarien "Tag-Nacht" und "Nacht-Tag".</p>
       <div class="transition-container">
         <div class="transition-block" data-transition="day-night">
           <h3>Tag zu Nacht</h3>
@@ -156,7 +156,7 @@
         </div>
       </div>
       <div class="transition-actions">
-        <button type="button" id="save-transition-palettes">Verlaeufe speichern</button>
+        <button type="button" id="save-transition-palettes">Verläufe speichern</button>
       </div>
     </section>
 

@@ -16,47 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusScenarioValue = document.getElementById('status-scenario-value');
 
 
-  // Fetch a compact status: which module is active and (for module 2) the current scenario
-  async function fetchStatus() {
-    try {
-      const r = await fetch('/api/status', { cache: 'no-store' });
-      if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-      const j = await r.json();
-      // j: { module: '1'|'2'|null, scenario?: { name, second, duration } }
-      // Mode / LED short labels
-      const modeShort = j.module === '2' ? 'Auto' : (j.module === '1' ? 'On' : (j.module === null ? 'Off' : String(j.module)));
-      if (statusModeValue) statusModeValue.textContent = modeShort;
-      if (statusLedValue) statusLedValue.textContent = j.module === '2' ? 'Auto (Modul 2)' : (j.module === '1' ? 'On (Modul 1)' : (j.module === null ? 'Off' : String(j.module)));
-
-      // Audio: prefer speech file if active, otherwise background file
-      try {
-        const audio = j.audio || {};
-        let audioText = '—';
-        if (audio.speechActive && audio.speechFile) {
-          audioText = `Speech: ${audio.speechFile.split(/\\|\//).pop()}`;
-        } else if (audio.backgroundFile) {
-          audioText = `BGM: ${audio.backgroundFile.split(/\\|\//).pop()}`;
-        }
-        if (statusAudioValue) statusAudioValue.textContent = audioText;
-      } catch (e) { if (statusAudioValue) statusAudioValue.textContent = '—'; }
-
-      if (statusCalendarValue) statusCalendarValue.textContent = j.module ? 'OK' : 'kein Ereignis';
-
-      if (statusScenarioValue) {
-        if (j.module === '2' && j.scenario) {
-          // server already rounds seconds; ensure integer display
-          const sec = Number.isFinite(Number(j.scenario.second)) ? Math.round(j.scenario.second) : j.scenario.second;
-          statusScenarioValue.textContent = `${j.scenario.name} — Sek ${sec}/${j.scenario.duration}s`;
-        } else {
-          statusScenarioValue.textContent = '';
-        }
-      }
-    } catch (e) { log('Status konnte nicht geladen werden: ' + e.message); }
-  }
-
-  // initial fetch and periodic polling (1s)
-  fetchStatus();
-  setInterval(fetchStatus, 1000);
+  // Status polling is handled centrally by public/js/statusbar.js
 
   async function setMode(mode){
     try{

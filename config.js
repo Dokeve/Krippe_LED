@@ -104,7 +104,7 @@ const logging = {
 };
 
 const gpio = {
-  pump: toInt(process.env.PUMP_GPIO, 19),
+  pump: toInt(process.env.PUMP_GPIO, 22),
   audioButton: toInt(process.env.AUDIO_BUTTON_GPIO, 17)
 };
 
