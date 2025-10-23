@@ -1,32 +1,68 @@
-<!DOCTYPE html><html lang="de"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Krippe – Steuerzentrale</title>
-<link rel="stylesheet" href="styles.css"/>
-<script src="/socket.io/socket.io.js"></script>
-</head><body>
-<header><h1>Krippe – Steuerzentrale</h1>
-<nav>
-  <a href="index.html" class="active">Home</a>
-  <a href="audio.html">Audio</a>
-  <a href="led-groups.html">LED-Gruppen</a>
-  <a href="calendar.html">Kalender</a>
-  <a href="export.html">Export/Update</a>
-</nav></header>
-<div class="container">
-  <section class="card"><h2>LEDs</h2>
-    <input type="color" id="color" value="#ffd48a"/>
-    <button class="primary" id="btnOn">LEDs an</button>
-    <button id="btnOff">LEDs aus</button>
-  </section>
-  <section class="card"><h2>Bachlauf</h2>
-    <button class="primary" id="flowOn">Bachlauf EIN</button>
-    <button id="flowOff">Bachlauf AUS</button>
-  </section>
-  <section class="card"><h2>Szenen</h2>
-    <button class="warn" data-module="1">Modul 1 (Gelb)</button>
-    <button data-module="2">Modul 2 (Nacht)</button>
-  </section>
-  <section class="card"><h2>Server-Logs</h2><div id="logs" class="log"></div></section>
-</div>
-<script src="js/index.js"></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>LED-Sound-Bachlauf – Start</title>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- FullCalendar: CDN + Fallback lokal -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+  <link rel="stylesheet" href="/vendor/fullcalendar/index.global.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script>
+    if (typeof FullCalendar === 'undefined') {
+      var s=document.createElement('script'); s.src='/vendor/fullcalendar/index.global.min.js'; document.head.appendChild(s);
+    }
+  </script>
+  <script defer src="js/index.js"></script>
+  <script defer src="js/statusbar.js"></script>
+  <script defer src="js/footer.js"></script>
+</head>
+<body>
+  <main id="main" role="main">
+    <nav class="top-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Start</a>
+      <a href="audio.html">Audio</a>
+      <a href="led-groups.html">LED</a>
+      <a href="calendar.html">Kalender</a>
+      <a href="star.html">Sternsteuerung</a>
+      <a href="bachlauf.html">Bachlauf</a>
+      <a href="export.html">Export</a>
+    </nav>
+
+    <!-- Unified Status Bar: kurz und informativ -->
+    <div id="status-bar" role="status" aria-live="polite">
+      <div class="status-item" id="status-mode">Modus: <strong id="status-mode-value">-</strong></div>
+      <div class="status-item" id="status-led">LEDs: <span id="status-led-value">-</span></div>
+      <div class="status-item" id="status-audio">Audio: <span id="status-audio-value">-</span></div>
+      <div class="status-item" id="status-calendar">Kalender: <span id="status-calendar-value">-</span></div>
+  <div class="status-item" id="status-scenario"> <span id="status-scenario-value"></span></div>
+  <div class="status-item" id="status-bachlauf">Bachlauf: <span id="status-bachlauf-value">-</span></div>
+      <div class="status-item">Quelle: <span id="bachlauf-source">-</span> (Manual: <span id="bachlauf-manual">-</span>)</div>
+    </div>
+
+    <div id="page-body">
+    <section id="controls">
+      <h2>Funktionen</h2>
+      <div class="button-group">
+        <button id="led-on">An</button>
+        <button id="led-off">Aus</button>
+        <button id="led-auto">Automatisch</button>
+      </div>
+      <p>„An“: Alle LEDs gleiche Farbe. „Aus“: alle Funktionen aus. „Automatisch“: gemäß Kalendereintrag.</p>
+    </section>
+
+    <section id="calendar-week-view">
+      <h2>Wochenübersicht (Kalenderblatt)</h2>
+      <div id="calendar"></div>
+    </section>
+    
+    <!-- error/log section remains inside page body -->
+    <section id="error-section">
+      <h2>Fehlermeldungen</h2>
+      <pre id="log-output" aria-live="polite">Keine Fehler</pre>
+    </section>
+    </div>
+  </main>
+  <!-- footer will be injected/updated by js/footer.js -->
+</body>
+</html>

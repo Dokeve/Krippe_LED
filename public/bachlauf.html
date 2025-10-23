@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bachlauf - Pumpensteuerung</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script defer src="/js/statusbar.js"></script>
+  <script defer src="/js/footer.js"></script>
+</head>
+<body>
+  <main id="main" role="main">
+    <nav class="top-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Start</a>
+      <a href="audio.html">Audio</a>
+      <a href="led-groups.html">LED</a>
+      <a href="calendar.html">Kalender</a>
+      <a href="star.html">Sternsteuerung</a>
+      <a href="bachlauf.html">Bachlauf</a>
+      <a href="export.html">Export</a>
+    </nav>
+
+    <!-- Unified Status Bar: kurz und informativ -->
+    <div id="status-bar" role="status" aria-live="polite">
+      <div class="status-item" id="status-mode">Modus: <strong id="status-mode-value">-</strong></div>
+      <div class="status-item" id="status-led">LEDs: <span id="status-led-value">-</span></div>
+      <div class="status-item" id="status-audio">Audio: <span id="status-audio-value">-</span></div>
+      <div class="status-item" id="status-calendar">Kalender: <span id="status-calendar-value">-</span></div>
+  <div class="status-item" id="status-scenario"> <span id="status-scenario-value"></span></div>
+  <div class="status-item" id="status-bachlauf">Bachlauf: <span id="status-bachlauf-value">-</span></div>
+      <div class="status-item">Quelle: <span id="bachlauf-source">-</span> (Manual: <span id="bachlauf-manual">-</span>)</div>
+    </div>
+
+    <section>
+      <h1>Bachlauf</h1>
+      <p>Hier kommt der Bachlauf hin.</p>
+      <div class="controls">
+        <button id="bachlauf-on">AN</button>
+        <button id="bachlauf-off">AUS</button>
+        <button id="bachlauf-clear">AUTO</button>
+      </div>
+    </section>
+  </main>
+  <script defer src="/js/bachlauf.js"></script>
+</body>
+</html>

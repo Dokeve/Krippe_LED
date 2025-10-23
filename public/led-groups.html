@@ -1,1 +1,170 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><link rel='stylesheet' href='styles.css'></head><body><h1>LED-Gruppen</h1><table id='tbl'><thead><tr><th>Name</th><th>Start</th><th>Länge</th><th>Farbe</th><th>Aktion</th></tr></thead><tbody></tbody></table><div><input id='n_name'><input id='n_start' type='number'><input id='n_len' type='number'><input id='n_color' type='color' value='#ffffff'><button id='add'>Hinzufügen</button></div><script src='js/led-groups.js'></script></body></html>
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LED-Gruppenverwaltung - LED Sound Bachlauf</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script defer src="js/led-groups.js"></script>
+  <script defer src="js/footer.js"></script>
+</head>
+<body>
+  <main id="main" role="main">
+    <nav class="top-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Start</a>
+      <a href="audio.html">Audio</a>
+      <a href="led-groups.html">LED</a>
+      <a href="calendar.html">Kalender</a>
+      <a href="star.html">Sternsteuerung</a>
+      <a href="bachlauf.html">Bachlauf</a>
+      <a href="export.html">Export</a>
+    </nav>
+
+    <!-- Template für Untergruppen -->
+    <template id="subgroup-template">
+      <article class="subgroup" data-template="true">
+        <div class="subgroup-header">
+          <label>Bezeichnung: <input type="text" class="sub-name" placeholder="z. B. Turm / Krippe" /></label>
+          <label>LED von: <input type="number" class="sub-led-from" min="0" /></label>
+          <label>LED bis: <input type="number" class="sub-led-to" min="0" /></label>
+          <label>LED Anzahl: <input type="number" class="sub-led-count" min="1" /></label>
+          <label>Wandbeleuchtung: <input type="checkbox" class="sub-wall" /></label>
+          <label>Dauerbeleuchtung: <input type="checkbox" class="sub-always" /></label>
+          <label>Grundfarbe Tag: <input type="color" class="sub-color-day" value="#000000" /></label>
+          <label>Grundfarbe Nacht: <input type="color" class="sub-color-night" value="#000000" /></label>
+          <div class="sub-actions">
+            <button type="button" class="toggle-details">Details</button>
+            <button type="button" class="save-subgroup">Speichern</button>
+            <button type="button" class="delete-subgroup">Löschen</button>
+          </div>
+        </div>
+
+        <details class="sub-details">
+          <summary>Zeitszenarios (Sekunden im Szenario) + LED-Auswahl</summary>
+          <div class="scenarios-list"></div>
+          <div class="scenarios-controls">
+            <button type="button" class="add-scenario-row">Szenario hinzufügen</button>
+          </div>
+
+          <!-- Individuelle LED-Farben (nur Quadrate) -->
+          <details class="card" open>
+            <summary>Individuelle LED-Farben (optional)</summary>
+            <div class="row" style="margin-bottom:8px;">
+              <button type="button" class="gen-individual-colors">Farbfelder nach LED-Anzahl erzeugen</button>
+              <span style="opacity:.8;margin-left:8px;">Wird nur ausgewertet, wenn befüllt. Leere Felder nutzen die Grundfarbe oder Szenario-Regeln.</span>
+            </div>
+
+            <div class="led-color-palette" aria-live="polite"></div>
+
+            <h3 style="margin-top:12px;">Gespeicherte Farben</h3>
+            <table class="table saved-colors">
+              <thead><tr><th>#</th><th>Farbe</th><th>HEX</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </details>
+        </details>
+      </article>
+    </template>
+
+    <section class="group-section" id="group-advent">
+      <div class="group-header">
+        <h2>Advent</h2>
+        <label class="inline-label"><input type="checkbox" id="group-advent-active"> Aktiv</label>
+        <button type="button" class="toggle-group" data-target="group-advent-body" aria-expanded="true">Bereich einklappen</button>
+      </div>
+      <div id="group-advent-body" class="group-body">
+        <div id="advent-subgroups" class="subgroup-container"></div>
+        <div class="group-controls">
+          <button id="add-advent-subgroup" type="button">Untergruppe hinzufügen</button>
+          <button id="save-advent-group" type="button">Gruppe speichern</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="group-section" id="group-weihnacht">
+      <div class="group-header">
+        <h2>Weihnachtszeit</h2>
+        <label class="inline-label"><input type="checkbox" id="group-weihnacht-active"> Aktiv</label>
+        <button type="button" class="toggle-group" data-target="group-weihnacht-body" aria-expanded="true">Bereich einklappen</button>
+      </div>
+      <div id="group-weihnacht-body" class="group-body">
+        <div id="weihnacht-subgroups" class="subgroup-container"></div>
+        <div class="group-controls">
+          <button id="add-weihnacht-subgroup" type="button">Untergruppe hinzufügen</button>
+          <button id="save-weihnacht-group" type="button">Gruppe speichern</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="group-section" id="group-lagerfeuer">
+      <h2>Lagerfeuer</h2>
+      <div id="lagerfeuer-settings" class="lagerfeuer-settings">
+        <div class="row">
+          <label>LED von <input type="number" id="lagerfeuer-led-from" min="0" value="0" /></label>
+          <label>LED bis <input type="number" id="lagerfeuer-led-to" min="0" value="0" /></label>
+          <label>LED Anzahl <input type="number" id="lagerfeuer-led-count" min="0" value="0" /></label>
+        </div>
+        <div class="row">
+          <label>Farbe 1 <input type="color" id="lagerfeuer-color1" value="#FF4500" /></label>
+          <label>Farbe 2 <input type="color" id="lagerfeuer-color2" value="#FF8C00" /></label>
+          <label>Farbe 3 <input type="color" id="lagerfeuer-color3" value="#FFD700" /></label>
+          <label>Farbe 4 <input type="color" id="lagerfeuer-color4" value="#FF6347" /></label>
+          <label>Farbe 5 <input type="color" id="lagerfeuer-color5" value="#FFFFFF" /></label>
+        </div>
+        <div class="row">
+          <label>Value-Noise <input type="checkbox" id="lagerfeuer-use-value-noise" /></label>
+          <label>Speed-Multiplier <input type="number" id="lagerfeuer-speed-multiplier" min="1" value="10" /></label>
+        </div>
+        <div class="scenarios-controls">
+          <button type="button" id="add-lagerfeuer-scenario">Szenario hinzufügen</button>
+        </div>
+        <div id="lagerfeuer-scenarios" class="scenarios-list"></div>
+        <div class="group-controls">
+          <button id="save-lagerfeuer" type="button">Speichern</button>
+          <button id="test-lagerfeuer" type="button">Testen (Simulation)</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="group-section" id="transition-settings">
+      <h2>Farbverläufe für Tag und Nacht</h2>
+      <p class="hint">Die hier gewählten Farben bestimmen den Verlauf für die Szenarien "Tag-Nacht" und "Nacht-Tag".</p>
+      <div class="transition-container">
+        <div class="transition-block" data-transition="day-night">
+          <h3>Tag zu Nacht</h3>
+          <div class="transition-palette">
+            <label>#1 <input type="color" value="#FFF6CF" data-index="0" /></label>
+            <label>#2 <input type="color" value="#FFE29A" data-index="1" /></label>
+            <label>#3 <input type="color" value="#FFB866" data-index="2" /></label>
+            <label>#4 <input type="color" value="#FF7F3F" data-index="3" /></label>
+            <label>#5 <input type="color" value="#D95F5F" data-index="4" /></label>
+            <label>#6 <input type="color" value="#8B4B7A" data-index="5" /></label>
+            <label>#7 <input type="color" value="#23325F" data-index="6" /></label>
+          </div>
+        </div>
+        <div class="transition-block" data-transition="night-day">
+          <h3>Nacht zu Tag</h3>
+          <div class="transition-palette">
+            <label>#1 <input type="color" value="#1A2747" data-index="0" /></label>
+            <label>#2 <input type="color" value="#21406C" data-index="1" /></label>
+            <label>#3 <input type="color" value="#2F64A0" data-index="2" /></label>
+            <label>#4 <input type="color" value="#4F8ECC" data-index="3" /></label>
+            <label>#5 <input type="color" value="#7EB8E4" data-index="4" /></label>
+            <label>#6 <input type="color" value="#B8DDF5" data-index="5" /></label>
+            <label>#7 <input type="color" value="#FFF5DB" data-index="6" /></label>
+          </div>
+        </div>
+      </div>
+      <div class="transition-actions">
+        <button type="button" id="save-transition-palettes">Verläufe speichern</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Systemprotokoll</h2>
+      <pre id="log-output" aria-live="polite">Keine Fehler</pre>
+    </section>
+  </main>
+  <!-- footer will be injected/updated by js/footer.js -->
+</body>
+</html>

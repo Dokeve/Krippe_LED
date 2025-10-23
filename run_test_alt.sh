@@ -1,5 +1,5 @@
-#!/bin/bash
-# run_test_alt.sh – Startskript für ALT (rpi-ws281x) GRB LED-Tests
+﻿#!/bin/bash
+# run_test_ws281x.sh – Startskript für WS281x-GRB LED-Tests
 # Startet: tests/led_test_alt_grb.cjs
 
 set -euo pipefail
@@ -8,22 +8,22 @@ PROJECT_DIR="/home/singer/led-sound-bachlauf"
 SCRIPT="$PROJECT_DIR/tests/led_test_alt_grb.cjs"
 
 # ===== Standard-Parameter =====
-COUNT=${COUNT:-500}          # LEDs
+COUNT=${COUNT:-1000}
 BRIGHTNESS=${BRIGHTNESS:-255}
 GPIO=${GPIO:-12}
 
 # Verhalten / Timings
-HOLD=${HOLD:-1200}           # ms Pause zw. Tests, wenn --wait=false
-WIPE_MS=${WIPE_MS:-20}       # Schrittgeschwindigkeit für Lauflichter (ms)
-WAIT=${WAIT:-true}          # true = nach jedem Test Enter abwarten
+HOLD=${HOLD:-1200}
+WIPE_MS=${WIPE_MS:-20}
+WAIT=${WAIT:-true}
 
-# Neue Optionen
-FIXED10=${FIXED10:-10}       # Blockgröße für "RGB-Blöcke à 10"
-SEG=${SEG:-5}                # Segmentlänge für Segment-Lauflicht
-ROUNDS=${ROUNDS:-4}          # Runden für Gap-Lauflicht
+# Weitere Optionen
+FIXED10=${FIXED10:-10}
+SEG=${SEG:-5}
+ROUNDS=${ROUNDS:-4}
 
 # Logging
-LOGFILE="${LOGFILE:-$PROJECT_DIR/ledtest_alt.log}"
+LOGFILE="${LOGFILE:-$PROJECT_DIR/ledtest_ws281x.log}"
 
 echo "Projekt:   $PROJECT_DIR"
 echo "Script:    $SCRIPT"
@@ -34,7 +34,6 @@ echo "HOLD=$HOLD  WIPE_MS=$WIPE_MS  WAIT=$WAIT"
 echo "FIXED10=$FIXED10  SEG=$SEG  ROUNDS=$ROUNDS"
 echo
 
-# Existenzcheck
 if [[ ! -f "$SCRIPT" ]]; then
   echo "FEHLER: Script nicht gefunden: $SCRIPT"
   exit 1
@@ -42,12 +41,11 @@ fi
 
 cd "$PROJECT_DIR"
 
-# ===== (optional) Core-Dumps aktivieren für native Debugs =====
 ulimit -c unlimited || true
 sudo sysctl -w kernel.core_pattern=/tmp/core.%e.%p.%t >/dev/null || true
 sudo sysctl -w fs.suid_dumpable=1 >/dev/null || true
 
-echo "Starte ALT-GRB-LED-Test..."
+echo "Starte WS281x-GRB-LED-Test..."
 sudo -E node "$SCRIPT" \
   --count "$COUNT" \
   --brightness "$BRIGHTNESS" \

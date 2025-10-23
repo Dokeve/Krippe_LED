@@ -1,0 +1,248 @@
+﻿1.	Erstelle eine Weboberfläche zur Steuerung von LEDs, Sound und 
+Bachlaufsteuerung
+2.	Die Steuerung der LEDs läuft über WS2812. Es werden rund 1000 LEDs 
+angesteuert.
+3.	Externe Stromversorgung für die LEDs ist vorhanden
+4.	Die LEDs sind in mehrere Kategorien unterteilt. Diese sind wie folgt:
+a.	Es gibt zwei Hauptkategorien
+i.	1. Hauptkategorie "Adventszeit"
+ii.	2. Hauptkategorie "Weihnachtszeit"
+b.	Es gibt mehrere Unterkategorien die man anlegen können sollte. Hier 
+sollten mehrere Eintragungen möglich sein:
+i.	Name 
+ii.	LED von
+iii.	LED bis
+iv.	Anzahl LEDs
+v.	Wandbeleuchtung
+vi.	Grundfarbe Tag
+vii.	Grundfarbe Nacht
+ viii.	Mehrere Zeitangabemöglichkeit nachdem man das Szenario 
+auswählen kann. Für jede Zeiteingabe (Start- / Endzeit) soll ein 
+Szenario ausgewählt werden können. Ist keine Zeit eingegeben gilt 
+die Start oder Endzeit. 
+Die Untergruppierungen sollen jeweils unter der Hauptgruppe angelegt werden können. 
+Dabei soll unter jeder Untergruppierung Felder aufgeführt werden, damit man 
+entsprechend der zuvor eingetragenen LED Anzahl Farben individuell auswählen kann.
+Ist Wandbeleuchtung aktiviert, dann soll entsprechend des abspielbaren Szenario Tag-
+Nach-Szenario von der Grundfarbe Tag zu Grundfarbe Nacht entsprechend eines 
+Sonnenuntergangs und bei Szenario Nacht-Tag entsprechend eines Sonnenaufgangs
+c.	Lagerfeuer soll als dritten Bereich angelegt werden. Hier sollen 5 Farben 
+auswählbar sein und ein Bereich LED von LED bis. Dieser soll analog eines 
+echten Lagerfeuers angesteuert werden.
+5.	Erstelle einen Visuellen Kalender (FullCalender) der auch als Kalender dargestellt 
+wird.
+a.	Im Kalender sollen Einträge von Tagen und Uhrzeiten möglich sein und ob 
+Modul 1 und Modul 2. Diese Eintragungen sollen im Kalender bearbeitet 
+werden können.
+b.	Grenzt ein Kalendereintrag direkt an den neuen, so ist immer der 
+aktuellere Eintrag zu nehmen. 
+c.	Modul 1 soll im Kalender gelb dargestellt werden
+d.	Modul 2 soll im Kalender blau dargestellt werden.
+e.	Der Kalender soll auf der html-Seite auch als Kalenderblatt dargestellt 
+werden, dass man per Pfeile auch durch die Monate navigieren kann. 
+6.	Es soll zwei Module zur Steuerung der LEDs geben. 
+a.	Modul 1, hier leuchten alle LEDs in der gleichen Farbe leuchten 
+entsprechend der Farbe, die bei Krippe Innen eingestellt ist.
+b.	Modul 2 die einen Tag-Nacht-Verlauf darbietet. Die Gesamtdauer eines 
+Zyklus beträgt 300 Sekunden. 
+i.	100 Sekunden Tag
+ii.	50 Sekunden Tag-Nacht
+iii.	100 Sekunden Nacht
+iv.	50 Sekunden Nacht-Tag
+7.	Verlauf des Tag-Nacht-Zyklus
+a.	Szenario Tag: Am Tag sollen nur die LEDs vom Turm zur Krippe, Wand von 
+Krippe zum Tor, Wand vom Tor zum Palast an sein.
+b.	Szenario Tag-Nacht: Die LEDs vom Turm zur Krippe, Wand von Krippe zum 
+Tor, Wand vom Tor zum Palast sollen von Gelb über Rot zu Blau wechseln 
+sollen. Darüber hinaus soll nach 40 der 50 Sekunden Laterne angehen.
+c.	Szenario Nacht. Die LEDS vom Turm zur Krippe, Wand von Krippe zum Tor, 
+Wand vom Tor zum Palast sollen blau leuchten und die Gebäude sollen 
+entsprechend einstellbarer Funktion individuell an und ausgehen. Dabei 
+soll beim Ein- und Ausschalten ein gleichmäßiger kurzer Fade-In und 
+Fade-Out ablaufen.
+d.	Szenario Nacht-Tag: Die LEDs vom Turm zur Krippe, Wand von Krippe zum 
+Tor, Wand vom Tor zum Palast sollen von Blau über Rot zu Gelb wechseln. 
+Die Laterne soll nach 10 Sekunden dann ausgehen. 
+8.	Audiodateien
+a.	Es soll eine Unterseite zur Verwaltung von Audiodateien erstellt werden. 
+Dabei soll es zwei Kategorien geben:
+i.	Kategorie Audiosprachdateien
+ii.	Kategorie Hintergrundmusik
+b.	Die Audiosprachdateien sollen per Knopfdruck über GPIO gesteuert 
+aktiviert werden. Dabei soll eine Mehrfachaktivierung während die 
+Audiosprachdateien abgespielt werden unterbunden werden. Wird die 
+Audiosprachdatei abgespielt, wird die Hintergrundmusik reduziert.
+c.	Die Audiosprachdateien sollen auf der Unterseite für einen Zeitraum 
+angelegt werden. Stimmt der Zeitraum mit dem Kalendereintrag Modul 2 
+übereinstimmt, wird die entsprechende Audiosprachdatei abgespielt.
+d.	Ist Modul 1 Aktiv wird keine Audiodatei abgespielt.
+e.	Die Hintergrundmusik soll entsprechend den Szenarien in Modul 2 
+abgespielt werden. 
+i.	Szenario Tag: Tag.mp3 wird abgespielt.
+ii.	Szenario Tag-Nacht: Tag-Nacht.mp3 wird abgespielt.
+iii.	Szenario Nacht. Nacht.mp3 wird abgespielt.
+iv.	Szenario Nacht-Tag: Nacht-Tag.mp3 wird abgespielt. 
+9.	Die Dateien sollen aus einem Ordner hochgeladen werden können und die 
+Audiosprachdateien mit einem Zeitraum versehen werden können. Beim 
+Auswählen der Datei wird der Name der Datei automatisch in das entsprechende 
+Feld eingetragen.
+10.	Die Audiosprachdateien sind im auf dem Raspberry Pi auf dem Pfad: 
+/home/singer/led-sound-bachlauf/audio/krippe/Audioprachdateien
+11.	Die Dateien für die Hintergrundmusik sind im auf dem Raspberry Pi auf dem Pfad: 
+/home/singer/led-sound-bachlauf/audio/krippe/Hintergrundmusik. Für die 
+Hintergrundmusik soll es auf der entsprechend html-Seite die funtkion geben, 
+dass man hinter den nachstehenden Szenario per DropDown einfügen kann. 
+Die Szenarien sind:
+Tag
+Tag-Nacht
+Nacht
+Nacht-Tag 
+12.	LEDs sollen einzeln mit einem Farbcode versehen werden können. Dies soll in 
+einer Unterseite möglich sein. Dabei soll eingetragen eine Start- und Endzeit der 
+LED während des entsprechenden Szenarios eingetragen werden können.
+a.	Beispiel: Szenario Nacht dauert 100 Sekunden.  LED 1 geht bei 10 
+Sekunden des Szenarios an und bei 60 Sekunden wieder aus.
+b.	Es sollen aber auch mehrer Leds mit ; getrennt ausgewählt werden 
+können oder ganze Bereiche getrennt durch - um mehrere LEDs mit 
+gleichem Farbcode benennen zu können.
+13.	Alle Daten sollen in einer Datenbank, MariaDB, angelegt werden und als Textdatei 
+exportiert, werden können.
+14.	Das ganze Programm soll unter JS programmiert und dem Server Express 
+gestartet werden.
+15.	Die Weboberfläche besteht aus einer Hauptseite, welche eine Übersicht über 
+alle Funktionen bietet und jeweils einer Unterseite für Audio, Kalender, Export, 
+LED, 
+16.	Während Modul 2 aktiv ist, wird auch der Bachlauf aktiv sein, welcher über GPIO 
+gesteuert wird.
+17.	Das Programm soll sich über eine Installationsdatei auf dem Raspberry 4 
+automatisch mit allen benötigten Programmen installieren.
+18.	Der Server soll automatisch mit dem Start des Raspberry gestartet werden.
+19.	Das Programm starten ein automatisches WLan, damit man von außen mit 
+anderen Geräten auf das System und das Programm zugreifen kann.
+20.	Es soll eine Anleitung zur Bedienung und Installation des Programms auf dem 
+Raspberry 4 erstellt werden.
+21.	Ist kein Modul im Kalender eingetragen, so sind alle LEDs, Sounds und Bachlauf 
+aus.
+22.	Im Kopfbereich aller Seiten der Weboberfläche sollen die Anderen Seiten zum 
+direkten Wechseln angezeigt werden. Die Hauptseite wird als Home bezeichnet.
+23.	Einträge im Kalender sollen per Haken auch als Serientermin wöchentlich 
+angelegt werden können.
+24.	In der Datei config.js soll folgende Befehle stehen:
+ 
+25.	Der Nutzername des Raspberry lautet: singer und das Passwort lautet: 12345
+26.	Der Ordnerpfad in dem alles angelegt werden soll lautet 
+home/singer/krippe_neu_2025
+27.	. Der Ordner krippe_neu_2025 soll mit der Installation des ganzen Programmes 
+erstellt werden und die Daten dort gespeichert / installiert werden.
+28.	Der Server startet automatisch und die Datenbank MariaDB soll, sofern noch 
+nicht vorhanden, automatisch angelegt werden.
+29.	Der Server soll so gestaltet sein, das ein Speichern von Daten und die 
+Übertragung in die Datenbank nicht zum Absturz führt.
+30.	Der Knopf für die Aktivierung und des Abspielens der Audiosprachdatei liegt auf 
+GPIO 
+31.	Es soll mit der Installation ein Ordner Audio mit den Unterordnern 
+Hintergrundmusik und Audiosprachdateien angelegt werden.
+32.	Alle Eintragungen auf den einzelnen Seiten sollen gespeichert werden können 
+und durch ändern und erneutes Speichern überschrieben werden können. 
+33.	Das Komplette Programm soll in einer Zip-Paket zur Verfügung stehen. 
+
+Dateistruktur
+
+In folgenden Ordnern sind die Dateien abgelegt. 
+led-sound-bachlauf
+hier sind alle nicht unten näher definierten Dateien abgelegt. 
+
+public: index.html, audio.html, led-groups.html, calendar.html, export.html, styles.css. 
+die dazugehörigen js-Dateien (index,js,  led-groups.js, audio.js, calendar.js, export.js) 
+sind in einem Unterordner des public-ordner mit namen "js" abgelegt
+
+services: audio-scenario.js, db.js, ws2812.js, gpio.js. scheduler.js, senarios.js, senario-
+controll.js, led-controll.js
+
+routes: api.js
+
+Datenbank: Die Datenbank die über Mariadb angelegt wurde heißt "nativity". Der 
+benutzer ist "pi" und es gibt kein passwort.
+
+
+Bei audio.html soll folgende funktionen ausgeführt werden:
+
+Audiosprachdateien: Auswahl einer audiodatei (mp3) aus dem zuvor im Chat 
+angegebenen Pfad mit der möglichkeit der Angabe von einem Start- und Enddatum und 
+der anschließenden möglichkeit zum speichern. Ist ein Eintrag erfasst worden, so öffnet 
+sich eine neue Zeile.
+Hintergrundmusik:
+Hier gibt es vier fix vorgegebene Zeilen die da lauten:
+"Tag"
+"Tag-Nacht"
+"Nacht"
+"Nacht-Tag"
+in den jeweiligen Zeilen kann ich eine Audiodatei aus dem für diesen Bereich schon 
+bereits im Chat genannten Pfad die Dateien über ein Dropdown menü auswählen und 
+speichern.
+
+calendar.html:	
+hier soll im oberen Bereich der Seite das Kalenderblatt (FullCalendar) mit möglichkeit 
+durch die Monate zu klicken eingebaut sein.
+Darunter gibt es dir Möglichkeit zwischen Modul 1 (gelb) und Modul 2 (blau) zu wählen 
+und eine Start- und Enddatum sowie eine Startuhrzeit und eine Enduhrzeit auszuwählen.
+
+led-groups.html: 
+Die Seite soll entsprechend dem nachfolgenden Beispiel aufgebaut sein. 
+
+Hauptgruppe (Advent) mit Aktivierungsfunktion bzw. deaktivierungsfunktion (haken 
+setzen oder entfernen)
+Darunter gibt es die Möglichkeit untergruppen einzupflegen nach folgenden Maßgaben
+"Bezeichnung", "LED von", "LED bis", "Anzahl LED" "Wandbeleuchtung" "Farbe Tag", 
+"Farbe Nacht" 
+durch eine Aufklappfunktion können folgende weiter Einstellungen vorgenommen 
+werden: 
+Farbänderung aller einzelnen LEDs entsprechend der Eintragung in "Anzahl LED" 
+Auswahl des Szenario und Start und Endzeit im Szenario (Hat ein Szenario 100 
+Sekunden Dauer und ich Trage hier 10 bis 100 ein, dann gehen die LED der Untergruppe 
+10 Sekunden nach Start des Szenarios an und nach 100 Sekunden aus. Sind mehrere 
+aneinander ablaufende Szenarien ausgewählt aber nur zum Beispiel eine End oder 
+Startzeit ausgewählt oder keine so bedeutet dies, dass die LEDS über die Dauer der zu 
+letzt eingetragenen Startzeit bis zur nächst eingetragenen Endzeit leuchten. Beispiel:
+
+Szenario Tag-Nacht von "20" bis "" LED von LED Bis
+Szenario Nacht "" ""
+Szenario Nacht-Tag "" "20" 
+ 
+bedeutet dies, dass die LEDs nach 20 Sekunden im Tag-Nachszenario eingeschalten 
+werden und dann erst wieder ausgehen, wenn das Nacht-Tag-Szenario 20 Sekunden 
+gelaufen ist. Nach jeder eintragung gibt es die möglichkeit zu speichern und es 
+erscheint. eine neue zeile um Szenarios in der gleichen Untergruppe einzutragen. Da es 
+sein kann, dass LEDs mehrfach während eines Szenarios an und ausgehen. Zusätzlich 
+möchte ich bei der Eintragung der Szenarien auch auswählen können welche leds 
+angehen. Habe ich in der Untergruppe 15 LEDS so kann ich angeben 1-5, 10, 12, 13-15. 
+Dies bedeutet dass dann nur diese LEDs angehen.
+Ist bei einer Untergruppe "Wandbeleuchtung" ausgewählt, so wechselt es im Szenario 
+Tag-Nacht von der Farbe Tag auf Farbe Nacht in den entsprechenden Farben eines 
+echten Sonnenuntergangs. Ist in diesem Fall dass Szenario Nacht-Tag aktiv wechseln 
+die Farben wie bei einem echten Sonnaufgang von Farbe Nacht auf Farbe Tag.
+Ist bei der Untergruppe kein Szenario und keine Zeit ausgewählt oder nur Szenario aber 
+keine Zeit, bedeutet dies, dass die LEDs immer an sind entsprechend der ausgewählten 
+Farben. Ist keine Farbe bei "Farbe Tag" oder "Farbe Nacht" eingetragen dann sind diese 
+aus.
+
+Die Zweite Hauptgruppe (Weihnachtszeit) ist, entsprechend auch die 
+Untergruppenanlage wie in der ersten Hauptgruppe aufgebaut.
+
+Ein Dritter Bereich auf der Seite ist das Lagerfeuer. Es soll ähnlich bei der Untergruppe 
+die möglichkeit geben mehrere Szenarien auswählen zu können und eine Start und 
+Endzeit (wie im Beispiel Untergruppen) auszuwählen. Darüber hinaus soll man 5 farben 
+auswählen können die dann wie ein echtes feuer durchwechseln in dem angegebenen 
+von bis LED-Bereich. Das wechseln erfolgt automatisch zwischen den fünf vorgegeben 
+Farben, damit ein echtes Feuer farblich simuliert wird. 
+
+Generell für die Programmierung. Alle Auswahlmöglichkeiten haben die 
+Speicherfunktion und können bei änderung und erneuter speicherung überschrieben 
+werden.
+
+gib mir nach allen gespeicherten Regeln folgende Datei aus: setup_accesspoint.sh
+
+
+
+
+

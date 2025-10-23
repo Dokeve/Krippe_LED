@@ -1,26 +1,29 @@
 {
   "name": "led-sound-bachlauf",
-  "version": "1.0.1",
+  "version": "1.0.0",
+  "description": "Weboberfläche zur Steuerung von LEDs, Audio und Szenarien (Krippe‑Projekt).",
+  "private": true,
   "type": "module",
-  "description": "Weboberfl\u00e4che zur Steuerung von WS2812-LEDs, Audio und Bachlauf inkl. Kalender und Update-Funktion",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "NODE_ENV=development node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "adm-zip": "^0.5.10",
-    "better-sqlite3": "^9.4.0",
-    "busboy": "^1.6.0",
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
-    "date-fns": "^3.6.0",
     "express": "^4.19.2",
+    "helmet": "^7.1.0",
     "morgan": "^1.10.0",
-    "node-cron": "^3.0.3",
-    "onoff": "^6.0.3",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.9.7",
+    "pigpio": "^3.3.1",
+    "play-sound": "^1.1.3",
     "rpi-ws281x": "^1.0.37",
-    "serve-index": "^1.9.1",
-    "socket.io": "^4.7.5",
-    "play-sound": "^1.1.6"
-  }
+    "dotenv": "^16.1.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "author": "Dominik Singer",
+  "license": "MIT"
 }

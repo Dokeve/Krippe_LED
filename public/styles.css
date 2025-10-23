@@ -1,1 +1,267 @@
-body{margin:0;font-family:system-ui;background:#0b1020;color:#e6eefc}/* (rest unchanged for brevity) */
+/* styles.css — LED Sound Bachlauf (Dark-Blue Theme)
+   Letzte Änderung: 02.09.2025 02:30 Uhr */
+* { box-sizing: border-box; }
+
+:root{
+  --bg: #0a1b2e;
+  --bg-soft: #102747;
+  --border: #1b3b6b;
+  --text: #e8eefc;
+  --muted: #c6dbff;
+  --accent: #ffd966;
+  --accent-2: #4169e1;
+  --btn: #1e4a89;
+  --btn-hover: #2a5db0;
+  --input-bg:#0e2241;
+  --input-border:#29508a;
+  --error:#ff6b6b;
+  --ok:#9be288;
+
+  /* Hintergrundbild – Datei liegt in public/1260222.jpg */
+  --background-image: url("/1260222.jpg");
+}
+
+html, body { margin: 0; padding: 0; height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding: 100px 16px 16px; /* space for fixed nav + statusbar */
+
+  background-image: var(--background-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Navigation */
+.top-nav {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: center;
+  position: fixed; top: 8px; left: 8px; right: 8px; z-index: 60;
+  margin: 0; padding: 10px 14px; background: var(--bg-soft);
+  border: 1px solid var(--border); border-radius: 10px;
+}
+.top-nav a { color: var(--muted); text-decoration: none; font-weight: 600; padding: 6px 8px; border-radius: 6px; }
+.top-nav a[aria-current="page"] { color: var(--accent); background: rgba(255, 217, 102, 0.1); }
+
+/* Unified Status Bar (compact) */
+#status-bar {
+  display: flex; gap: 12px; align-items: center; justify-content: center;
+  position: fixed; top: 60px; left: 8px; right: 8px; z-index: 50;
+  padding: 8px 12px; margin: 0; background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border); color: var(--muted);
+  flex-wrap: wrap;
+}
+.status-item { font-size: 0.95rem; padding: 4px 8px; }
+.status-item strong { color: var(--accent); }
+#status-scenario-value { color: var(--accent-2); font-weight: 600; margin-left: 6px; }
+
+/* Container/Karten */
+section, .card {
+  background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; margin: 12px auto; max-width: 1200px;
+}
+h1,h2,h3 { color: #eaf2ff; margin: 12px 0; }
+
+/* Buttons */
+.button-group, .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  background: var(--btn); color: #fff; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer;
+}
+button:hover { background: var(--btn-hover); }
+button[disabled] { opacity: .6; cursor: not-allowed; }
+
+/* Inputs/Selects */
+input[type="text"], input[type="number"], input[type="time"], input[type="date"], input[type="color"], select {
+  background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border);
+  border-radius: 6px; padding: 8px; min-width: 130px;
+}
+label { display: inline-flex; align-items: center; gap: 8px; margin: 4px 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* Tabellen */
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+.table th { background: rgba(198,219,255,0.08); }
+
+/* Details/Accordions */
+details { border: 1px dashed var(--border); border-radius: 8px; padding: 8px; background: rgba(16,39,71,0.5); }
+details summary { cursor: pointer; font-weight: 600; }
+
+/* Kalenderbereich */
+#calendar { max-width: 1200px; margin: 0 auto; }
+.fc .fc-toolbar-title { color: var(--text); }
+.fc .fc-button { background: var(--btn); border: none; }
+.fc .fc-button:hover { background: var(--btn-hover); }
+.fc-theme-standard .fc-scrollgrid, .fc-theme-standard td, .fc-theme-standard th { border-color: var(--border); }
+.fc-daygrid-day, .fc-timegrid-slot { background: rgba(10,27,46,0.6); }
+.fc .fc-daygrid-day-number, .fc .fc-col-header-cell-cushion { color: var(--text); }
+
+/* LED-Gruppen */
+.subgroup-header { display:flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sub-actions { display:flex; gap:6px; }
+.subgroup-container { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.scenario-row { display: grid; grid-template-columns: 180px 1fr 1fr 1.4fr auto; gap: 8px; margin: 6px 0; }
+.scenarios-controls { display:flex; justify-content: flex-end; }
+
+.group-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-header h2 {
+  margin: 0;
+}
+
+.group-body {
+  margin-top: 12px;
+}
+
+.group-body.collapsed {
+  display: none;
+}
+
+.toggle-group {
+  margin-left: auto;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+}
+
+.toggle-group:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Log */
+pre#log-output { white-space: pre-wrap; background: #081629; border: 1px solid var(--border); border-radius: 8px; padding: 10px; min-height: 80px; }
+
+/* Responsive */
+@media (max-width: 900px) { .scenario-row { grid-template-columns: 1fr 1fr 1fr 1fr auto; } }
+@media (max-width: 640px) { .scenario-row { grid-template-columns: 1fr; } .top-nav { justify-content: flex-start; overflow-x: auto; } }
+
+/* ===== LED-Subgruppen: Individuelle Farben – Layout & Quadrate ===== */
+.subgroup { overflow: hidden; }
+.subgroup-header, .sub-details { box-sizing: border-box; }
+
+/* Grundfarbe Tag/Nacht: auch als Quadrate darstellen */
+.subgroup-header input[type="color"] {
+  width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 0; margin: 0 0 0 4px;
+  border: 1px solid var(--border); border-radius: 6px; background: transparent; cursor: pointer; vertical-align: middle;
+}
+.subgroup-header input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.subgroup-header input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+.subgroup-header input[type="color"]::-moz-color-swatch { border: none; border-radius: 4px; }
+
+/* Palette-Container */
+.sub-details .led-color-palette {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px; align-items: start; width: 100%; max-width: 100%;
+}
+
+/* Item */
+.sub-details .led-color-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px;
+  border: 1px solid var(--border); border-radius: 8px; background: rgba(16,39,71,0.35);
+  max-width: 100%; overflow: hidden;
+}
+.sub-details .led-color-item .led-label { min-width: 52px; font-weight: 600; opacity: .9; white-space: nowrap; }
+
+/* Alle Color-Picker im Detailbereich als Quadrate */
+.sub-details input[type="color"]{
+  width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important;
+  padding: 0 !important; margin: 0 !important; border: 1px solid var(--border); border-radius: 6px;
+  background: transparent; display: inline-block; vertical-align: middle; cursor: pointer;
+}
+.sub-details input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.sub-details input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+.sub-details input[type="color"]::-moz-color-swatch { border: none; border-radius: 4px; }
+
+/* HEX-Textfelder im Detailbereich ausblenden (nur Quadrate zeigen) */
+.sub-details input[type="color"] + input[type="text"],
+.sub-details input[type="text"][placeholder^="#"],
+.sub-details input[type="text"][value^="#"],
+.sub-details input[type="text"].hex,
+.sub-details .led-color-palette input[type="text"] {
+  display: none !important;
+}
+
+/* Polsterung */
+.sub-details { padding: 8px; }
+
+/* Responsiv */
+@media (max-width: 900px) { .sub-details .led-color-palette { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+@media (max-width: 640px) { .sub-details .led-color-palette { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
+
+.transition-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 12px;
+}
+
+.transition-block {
+  flex: 1 1 280px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.transition-block h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.transition-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 12px;
+}
+
+.transition-palette label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.85rem;
+  gap: 6px;
+}
+
+.transition-palette input[type="color"] {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.transition-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Bachlauf badge for calendar events */
+.bachlauf-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; min-width:18px; min-height:18px; border-radius:4px;
+  font-size:12px; margin-right:6px;
+}
+.bachlauf-on { background: rgba(0,120,200,0.08); color:#1e90ff; }
+.bachlauf-off { background: rgba(128,128,128,0.06); color:#9aa0a6; text-decoration:line-through; }
+.fc-event .fc-event-inner { display:flex; align-items:center; gap:6px; }
+.fc-event .fc-event-title-text { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.calendar-legend { font-size:0.92rem; color:var(--muted); }

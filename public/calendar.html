@@ -1,1 +1,101 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><link rel='stylesheet' href='styles.css'></head><body><h1>Kalender</h1><table id='tbl'><thead><tr><th>Titel</th><th>Start</th><th>Ende</th><th>Modul</th><th>Aktion</th></tr></thead><tbody></tbody></table><div><input id='n_title'><input id='n_start' type='datetime-local'><input id='n_end' type='datetime-local'><select id='n_module'><option value='1'>Modul 1</option><option value='2'>Modul 2</option></select><button id='add'>Hinzufügen</button></div><script src='js/calendar.js'></script></body></html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Kalender — LED Sound Bachlauf</title>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- FullCalendar: CDN + Fallback lokal -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+  <link rel="stylesheet" href="/vendor/fullcalendar/index.global.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script>
+    if (typeof FullCalendar === 'undefined') {
+      var s=document.createElement('script'); s.src='/vendor/fullcalendar/index.global.min.js'; document.head.appendChild(s);
+    }
+  </script>
+  <script defer src="js/calendar.js"></script>
+  <script defer src="js/footer.js"></script>
+</head>
+<body>
+  <main id="main" role="main">
+    <nav class="top-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Start</a>
+      <a href="audio.html">Audio</a>
+      <a href="led-groups.html">LED</a>
+      <a href="calendar.html">Kalender</a>
+      <a href="star.html">Sternsteuerung</a>
+      <a href="bachlauf.html">Bachlauf</a>
+      <a href="export.html">Export</a>
+    </nav>
+
+    <section>
+      <h2>Kalenderblatt (Monat)</h2>
+      <div class="calendar-legend" style="margin-bottom:8px;">
+        <span class="bachlauf-badge bachlauf-on" aria-hidden="true">💧</span> Bachlauf an
+        <span style="margin-left:12px;" class="bachlauf-badge bachlauf-off" aria-hidden="true">🚱</span> Bachlauf aus
+      </div>
+      <div id="calendar"></div>
+    </section>
+
+    <section>
+      <h2>Eintrag anlegen/bearbeiten</h2>
+      <input type="hidden" id="current-id" value="">
+      <input type="hidden" id="current-series-root" value="">
+      <div class="row">
+        <label>Modul
+          <select id="module-select">
+            <option value="1">Modul 1 (gelb)</option>
+            <option value="2">Modul 2 (blau)</option>
+          </select>
+        </label>
+        <label style="margin-left:12px;">
+          <input type="checkbox" id="bachlauf-enabled" checked>
+          Bachlauf aktiv (bei Modul 2)
+        </label>
+        <label>Startdatum <input type="date" id="start-date"></label>
+        <label>Startzeit <input type="time" id="start-time" value="00:00"></label>
+        <label>Enddatum <input type="date" id="end-date"></label>
+        <label>Endzeit <input type="time" id="end-time" value="23:59"></label>
+      </div>
+
+      <!-- Serientermin (wöchentlich) -->
+      <details class="card" open>
+        <summary>Serientermin (wöchentliche Wiederholung)</summary>
+        <div class="row">
+          <label><input type="checkbox" id="recur-enabled"> Wöchentlich wiederholen</label>
+          <label>Serienende (inkl.) <input type="date" id="recur-until" disabled></label>
+          <span style="opacity:.8">Wiederholt den Termin jede Woche am gleichen Wochentag bis einschließlich Serienende.</span>
+        </div>
+      </details>
+
+      <div class="row" style="margin-top:8px;">
+        <button id="save-calendar-settings">💾 Speichern</button>
+        <button id="delete-calendar-entry" style="background:#8b1e1e;">🗑 Löschen</button>
+        <button id="reset-form" type="button">↺ Neu / Formular leeren</button>
+      </div>
+
+      <!-- Löschumfang: immer sichtbar; „Ganze Serie“ wird bei Nicht-Serie deaktiviert -->
+      <div class="row" id="delete-scope-row" style="margin-top:6px;">
+        <fieldset style="border:1px dashed var(--border); border-radius:8px; padding:6px;">
+          <legend style="opacity:.8;">Löschumfang</legend>
+          <label style="margin-right:12px;">
+            <input type="radio" name="delete-scope" value="one" checked> Nur diesen Termin
+          </label>
+          <label id="delete-scope-series-wrap">
+            <input type="radio" name="delete-scope" value="series" id="delete-scope-series-radio"> Ganze Serie
+          </label>
+          <span id="delete-scope-hint" style="margin-left:12px; opacity:.7;"></span>
+        </fieldset>
+      </div>
+
+      <p>Hinweis: Beim Bearbeiten (Formular durch Klick gefüllt) ersetzt „Speichern“ den bestehenden Eintrag.</p>
+    </section>
+
+    <section>
+      <h2>Log</h2>
+      <pre id="log-output">Keine Fehler</pre>
+    </section>
+  </main>
+  <!-- footer will be injected/updated by js/footer.js -->
+</body>
+</html>
