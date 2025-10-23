@@ -12,18 +12,21 @@ const DEFAULT_TRANSITIONS = {
   nightDay: ['#1A2747', '#21406C', '#2F64A0', '#4F8ECC', '#7EB8E4', '#B8DDF5', '#FFF5DB']
 };
 
+const DEFAULT_LAGERFEUER = {
+  ledFrom: 0,
+  ledTo: 0,
+  ledCount: 0,
+  colors: ['#FF4500', '#FF8C00', '#FFD700', '#FFA500', '#FF6347'],
+  scenarios: [],
+  useValueNoise: false,
+  speedMultiplier: 10
+};
+
 const DEFAULT_LED = {
   adventActive: false,
   weihnachtActive: false,
   advent: [],
   weihnacht: [],
-  lagerfeuer: {
-    ledFrom: 0,
-    ledTo: 0,
-    ledCount: 0,
-    colors: ['#FF4500', '#FF8C00', '#FFD700', '#FFA500', '#FF6347'],
-    scenarios: []
-  },
   transitions: {
     dayNight: DEFAULT_TRANSITIONS.dayNight.slice(),
     nightDay: DEFAULT_TRANSITIONS.nightDay.slice()
@@ -105,13 +108,13 @@ function sanitizeGroupList(list) {
 }
 
 function sanitizeLagerfeuer(lf) {
-  if (!lf || typeof lf !== 'object') return DEFAULT_LED.lagerfeuer;
+  if (!lf || typeof lf !== 'object') return DEFAULT_LAGERFEUER;
   const ledFrom = Number.isFinite(Number(lf.ledFrom)) ? Number(lf.ledFrom) : 0;
   const ledTo = Number.isFinite(Number(lf.ledTo)) ? Number(lf.ledTo) : ledFrom;
   const ledCount = Number.isFinite(Number(lf.ledCount)) ? Number(lf.ledCount) : Math.max(0, ledTo - ledFrom + 1);
   const colors = Array.isArray(lf.colors)
     ? lf.colors.slice(0, 5).map(c => (typeof c === 'string' ? c : ''))
-    : DEFAULT_LED.lagerfeuer.colors;
+    : DEFAULT_LAGERFEUER.colors;
   const scenarios = Array.isArray(lf.scenarios)
     ? lf.scenarios.map(sanitizeScenario).filter(Boolean)
     : [];
@@ -121,6 +124,7 @@ function sanitizeLagerfeuer(lf) {
 }
 
 function sanitizeConfig(input = {}) {
+  // Accept legacy top-level "lagerfeuer" as an input fallback, but we will not persist a top-level field.
   const topLager = input && typeof input === 'object' && input.lagerfeuer ? sanitizeLagerfeuer(input.lagerfeuer) : null;
   const advLager = input && typeof input === 'object' && input.adventLagerfeuer ? sanitizeLagerfeuer(input.adventLagerfeuer) : null;
   const weiLager = input && typeof input === 'object' && input.weihnachtLagerfeuer ? sanitizeLagerfeuer(input.weihnachtLagerfeuer) : null;
@@ -131,20 +135,12 @@ function sanitizeConfig(input = {}) {
   const advent = rawAdvent.map((g) => {
     const s = sanitizeSubgroup(g);
     if (!s) return null;
-    if ((g == null || g.lagerfeuer === undefined)) {
-      if (advLager) s.lagerfeuer = advLager;
-      else if (topLager) s.lagerfeuer = topLager;
-    }
     return s;
   }).filter(Boolean);
 
   const weihnacht = rawWeih.map((g) => {
     const s = sanitizeSubgroup(g);
     if (!s) return null;
-    if ((g == null || g.lagerfeuer === undefined)) {
-      if (weiLager) s.lagerfeuer = weiLager;
-      else if (topLager) s.lagerfeuer = topLager;
-    }
     return s;
   }).filter(Boolean);
 
@@ -153,10 +149,9 @@ function sanitizeConfig(input = {}) {
     weihnachtActive: Boolean(input.weihnachtActive),
     advent,
     weihnacht,
-    // persist group-specific lagerfeuer (if provided) and keep top-level for backward compatibility
-    adventLagerfeuer: advLager || topLager || sanitizeLagerfeuer(input.lagerfeuer),
-    weihnachtLagerfeuer: weiLager || topLager || sanitizeLagerfeuer(input.lagerfeuer),
-    lagerfeuer: topLager || sanitizeLagerfeuer(input.lagerfeuer),
+    // persist only group-specific lagerfeuer for Advent and Weihnachtszeit
+    adventLagerfeuer: advLager || topLager || DEFAULT_LAGERFEUER,
+    weihnachtLagerfeuer: weiLager || topLager || DEFAULT_LAGERFEUER,
     transitions: sanitizeTransitions(input.transitions)
   };
 }
