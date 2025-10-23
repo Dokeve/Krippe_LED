@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Serie
   const recurEnabled = document.getElementById("recur-enabled");
   const recurUntil = document.getElementById("recur-until");
+  const bachlaufEnabled = document.getElementById('bachlauf-enabled');
 
   // Bearbeitung/Löschen
   const currentIdInput = document.getElementById("current-id");
@@ -125,19 +126,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Adjazente Termine bleiben bestehen (nur echte Überlappung wird verdrängt)
   function mergeWithPrecedence(existing, newcomer) {
-    const nx = [];
+    const out = [];
     const startB = new Date(newcomer.start).getTime();
     const endB = new Date(newcomer.end || newcomer.start).getTime();
 
     for (const ev of existing) {
-      const startA = new Date(ev.start).getTime();
-      const endA = new Date(ev.end || ev.start).getTime();
-      const overlap = endA > startB && endB > startA;
-      if (overlap) continue; // neuer verdrängt
-      nx.push(ev);
+      const startA_d = new Date(ev.start);
+      const endA_d = new Date(ev.end || ev.start);
+      const startA = startA_d.getTime();
+      const endA = endA_d.getTime();
+
+      // no overlap -> keep as-is
+      if (!(endA > startB && endB > startA)) {
+        out.push(ev);
+        continue;
+      }
+
+      // existing fully inside newcomer -> drop existing
+      if (startA >= startB && endA <= endB) {
+        // skip (newcomer covers it)
+        continue;
+      }
+
+      // existing envelops newcomer -> split into two parts
+      if (startA < startB && endA > endB) {
+        // left part: startA .. startB
+        const left = Object.assign({}, ev, { end: toLocalISO(new Date(startB)) });
+        // right part: endB .. endA (new id)
+        const right = Object.assign({}, ev, { id: synthId(), start: toLocalISO(new Date(endB)), end: toLocalISO(endA_d) });
+        out.push(left);
+        out.push(right);
+        continue;
+      }
+
+      // overlap on right side (existing starts before newcomer, ends inside newcomer) -> trim end
+      if (startA < startB && endA > startB && endA <= endB) {
+        const trimmed = Object.assign({}, ev, { end: toLocalISO(new Date(startB)) });
+        out.push(trimmed);
+        continue;
+      }
+
+      // overlap on left side (existing starts inside newcomer, ends after newcomer) -> trim start
+      if (startA >= startB && startA < endB && endA > endB) {
+        const trimmed = Object.assign({}, ev, { start: toLocalISO(new Date(endB)) });
+        out.push(trimmed);
+        continue;
+      }
+
+      // fallback: if logic didn't match, drop the existing to avoid overlap
     }
-    nx.push(newcomer);
-    return nx.sort((a,b)=> new Date(a.start) - new Date(b.start));
+
+    out.push(newcomer);
+    return out.sort((a,b)=> new Date(a.start) - new Date(b.start));
   }
 
   function generateWeeklySeries(baseEntry, untilDate) {
@@ -160,6 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
         end: toLocalISO(e),
         allDay: baseEntry.allDay === true ? true : false,
         seriesRoot: baseId,
+        bachlauf: baseEntry.bachlauf === false ? false : true,
         seriesIndex: k
       });
       k++;
@@ -176,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
       end: ev.end || null,
       allDay: ev.allDay === true ? true : false,
       color: (String(ev.module) === '1' ? 'gold' : 'royalblue'),
-      extendedProps: { module: ev.module, seriesRoot: ev.seriesRoot ?? getSeriesRootFromId(ev.id) }
+      extendedProps: { module: ev.module, seriesRoot: ev.seriesRoot ?? getSeriesRootFromId(ev.id), bachlauf: (ev.bachlauf === false ? false : true) }
     }));
   }
 
@@ -212,6 +253,26 @@ document.addEventListener("DOMContentLoaded", () => {
       locale: 'de',
       selectable: true,
       headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+      eventContent: function(arg) {
+        try {
+          const ev = arg.event;
+          const bachlauf = ev.extendedProps?.bachlauf === false ? false : true;
+          const icon = bachlauf ? '💧' : '🚱';
+          const iconClass = bachlauf ? 'bachlauf-on' : 'bachlauf-off';
+          const html = `<div class="fc-event-inner"><span class="bachlauf-badge ${iconClass}" aria-hidden="true">${icon}</span><span class="fc-event-title-text">${arg.event.title || ''}</span></div>`;
+          return { html };
+        } catch (e) {
+          return { html: `<span>${arg.event.title || ''}</span>` };
+        }
+      },
+      eventDidMount: function(info) {
+        try {
+          const ev = info.event;
+          const bachlauf = ev.extendedProps?.bachlauf === false ? false : true;
+          info.el.setAttribute('aria-label', `${ev.title} — Bachlauf: ${bachlauf ? 'an' : 'aus'}`);
+          info.el.title = `${ev.title}\nBachlauf: ${bachlauf ? 'an' : 'aus'}`;
+        } catch (e) { /* ignore */ }
+      },
       events: async (info, success, failure) => {
         try {
           const arr = await apiGetCalendar();
@@ -242,6 +303,9 @@ document.addEventListener("DOMContentLoaded", () => {
           endTimeInput.value = e2.time;
 
           setSeriesDeleteOption(sroot);
+
+          // populate bachlauf checkbox
+          if (bachlaufEnabled) bachlaufEnabled.checked = (ev.extendedProps?.bachlauf === false ? false : true);
 
           log(`[OK] Termin ausgewählt: ${ev.title} (${s.date} ${s.time} → ${e2.date} ${e2.time})${sroot ? ' [Serie]' : ''}`);
         } catch (e) {
@@ -276,7 +340,8 @@ document.addEventListener("DOMContentLoaded", () => {
         title: 'Modul ' + moduleSelect.value,
         start: toLocalISO(start),
         end: toLocalISO(end),
-        allDay: false
+        allDay: false,
+        bachlauf: bachlaufEnabled ? !!bachlaufEnabled.checked : true
       };
 
       // Bestehende Daten holen
