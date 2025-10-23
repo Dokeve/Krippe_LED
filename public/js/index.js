@@ -59,6 +59,26 @@ document.addEventListener('DOMContentLoaded', () => {
       initialView:'timeGridWeek',
       locale:'de',
       headerToolbar:{ left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,timeGridDay' },
+      eventContent: function(arg) {
+        try {
+          const ev = arg.event;
+          const bachlauf = ev.extendedProps?.bachlauf === false ? false : true;
+          const icon = bachlauf ? '💧' : '🚱';
+          const iconClass = bachlauf ? 'bachlauf-on' : 'bachlauf-off';
+          const html = `<div class="fc-event-inner"><span class="bachlauf-badge ${iconClass}" aria-hidden="true">${icon}</span><span class="fc-event-title-text">${arg.event.title || ''}</span></div>`;
+          return { html };
+        } catch (e) {
+          return { html: `<span>${arg.event.title || ''}</span>` };
+        }
+      },
+      eventDidMount: function(info) {
+        try {
+          const ev = info.event;
+          const bachlauf = ev.extendedProps?.bachlauf === false ? false : true;
+          info.el.setAttribute('aria-label', `${ev.title} — Bachlauf: ${bachlauf ? 'an' : 'aus'}`);
+          info.el.title = `${ev.title}\nBachlauf: ${bachlauf ? 'an' : 'aus'}`;
+        } catch (e) { /* ignore */ }
+      },
       slotMinTime: "00:00:00",
       slotMaxTime: "24:00:00",
       eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false },
@@ -72,7 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
             start: toLocalNaiveISO(ev.start),
             end: ev.end ? toLocalNaiveISO(ev.end) : null,
             allDay: ev.allDay !== false,
-            color: (ev.module === '1' ? 'gold' : 'royalblue')
+            color: (ev.module === '1' ? 'gold' : 'royalblue'),
+            extendedProps: { module: ev.module, bachlauf: (ev.bachlauf === false ? false : true) }
           }));
           success(mapped);
           document.getElementById('calendar-status')?.replaceChildren(document.createTextNode('OK'));

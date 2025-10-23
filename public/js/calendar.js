@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const recurEnabled = document.getElementById("recur-enabled");
   const recurUntil = document.getElementById("recur-until");
   const bachlaufEnabled = document.getElementById('bachlauf-enabled');
+  const bachlaufLabel = bachlaufEnabled ? bachlaufEnabled.closest('label') : null;
 
   // Bearbeitung/Löschen
   const currentIdInput = document.getElementById("current-id");
@@ -94,6 +95,23 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteScopeHint.textContent = 'Kein Serien-Event ausgewählt.';
     }
   }
+
+  // show/disable bachlauf control only for Module 2
+  function updateBachlaufControlForModule(module) {
+    try {
+      if (!bachlaufEnabled) return;
+      if (String(module) === '1') {
+        bachlaufEnabled.checked = false;
+        bachlaufEnabled.disabled = true;
+        if (bachlaufLabel) bachlaufLabel.style.display = 'none';
+      } else {
+        bachlaufEnabled.disabled = false;
+        if (bachlaufLabel) bachlaufLabel.style.display = '';
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  moduleSelect?.addEventListener('change', () => updateBachlaufControlForModule(moduleSelect.value));
 
   async function apiGetCalendar() {
     const r = await fetch('/api/calendar', { cache: 'no-store' });
@@ -182,8 +200,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function generateWeeklySeries(baseEntry, untilDate) {
     const out = [];
-    const baseStart = new Date(baseEntry.start);
-    const baseEnd = new Date(baseEntry.end || baseEntry.start);
+    // Parse baseEntry.start/end as local naive ISO (YYYY-MM-DDTHH:MM(:SS)?) to avoid Date parsing differences
+    function parseLocalISO(iso) {
+      if (!iso) return null;
+      // Accept: YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+      if (!m) {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return null;
+        return d;
+      }
+      const y = parseInt(m[1], 10);
+      const mo = parseInt(m[2], 10);
+      const da = parseInt(m[3], 10);
+      const hh = parseInt(m[4], 10);
+      const mm = parseInt(m[5], 10);
+      const ss = m[6] ? parseInt(m[6], 10) : 0;
+      return new Date(y, mo - 1, da, hh, mm, ss, 0);
+    }
+
+    const baseStart = parseLocalISO(baseEntry.start) || new Date(baseEntry.start);
+    const baseEnd = parseLocalISO(baseEntry.end || baseEntry.start) || new Date(baseEntry.end || baseEntry.start);
     const endBoundary = new Date(untilDate.getFullYear(), untilDate.getMonth(), untilDate.getDate(), 23, 59, 59, 999);
 
     let k = 0;
@@ -256,6 +293,11 @@ document.addEventListener("DOMContentLoaded", () => {
       eventContent: function(arg) {
         try {
           const ev = arg.event;
+          const moduleId = String(ev.extendedProps?.module || '1');
+          // For module 1, Bachlauf is always disabled; do not show icon
+          if (moduleId === '1') {
+            return { html: `<div class="fc-event-inner"><span class="fc-event-title-text">${arg.event.title || ''}</span></div>` };
+          }
           const bachlauf = ev.extendedProps?.bachlauf === false ? false : true;
           const icon = bachlauf ? '💧' : '🚱';
           const iconClass = bachlauf ? 'bachlauf-on' : 'bachlauf-off';
@@ -341,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
         start: toLocalISO(start),
         end: toLocalISO(end),
         allDay: false,
-        bachlauf: bachlaufEnabled ? !!bachlaufEnabled.checked : true
+        bachlauf: String(moduleSelect.value) === '1' ? false : (bachlaufEnabled ? !!bachlaufEnabled.checked : true)
       };
 
       // Bestehende Daten holen
