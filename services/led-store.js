@@ -121,12 +121,42 @@ function sanitizeLagerfeuer(lf) {
 }
 
 function sanitizeConfig(input = {}) {
+  const topLager = input && typeof input === 'object' && input.lagerfeuer ? sanitizeLagerfeuer(input.lagerfeuer) : null;
+  const advLager = input && typeof input === 'object' && input.adventLagerfeuer ? sanitizeLagerfeuer(input.adventLagerfeuer) : null;
+  const weiLager = input && typeof input === 'object' && input.weihnachtLagerfeuer ? sanitizeLagerfeuer(input.weihnachtLagerfeuer) : null;
+
+  const rawAdvent = Array.isArray(input.advent) ? input.advent : [];
+  const rawWeih = Array.isArray(input.weihnacht) ? input.weihnacht : [];
+
+  const advent = rawAdvent.map((g) => {
+    const s = sanitizeSubgroup(g);
+    if (!s) return null;
+    if ((g == null || g.lagerfeuer === undefined)) {
+      if (advLager) s.lagerfeuer = advLager;
+      else if (topLager) s.lagerfeuer = topLager;
+    }
+    return s;
+  }).filter(Boolean);
+
+  const weihnacht = rawWeih.map((g) => {
+    const s = sanitizeSubgroup(g);
+    if (!s) return null;
+    if ((g == null || g.lagerfeuer === undefined)) {
+      if (weiLager) s.lagerfeuer = weiLager;
+      else if (topLager) s.lagerfeuer = topLager;
+    }
+    return s;
+  }).filter(Boolean);
+
   return {
     adventActive: Boolean(input.adventActive),
     weihnachtActive: Boolean(input.weihnachtActive),
-    advent: sanitizeGroupList(input.advent),
-    weihnacht: sanitizeGroupList(input.weihnacht),
-    lagerfeuer: sanitizeLagerfeuer(input.lagerfeuer),
+    advent,
+    weihnacht,
+    // persist group-specific lagerfeuer (if provided) and keep top-level for backward compatibility
+    adventLagerfeuer: advLager || topLager || sanitizeLagerfeuer(input.lagerfeuer),
+    weihnachtLagerfeuer: weiLager || topLager || sanitizeLagerfeuer(input.lagerfeuer),
+    lagerfeuer: topLager || sanitizeLagerfeuer(input.lagerfeuer),
     transitions: sanitizeTransitions(input.transitions)
   };
 }
