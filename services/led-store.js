@@ -13,13 +13,17 @@ const DEFAULT_TRANSITIONS = {
 };
 
 const DEFAULT_LAGERFEUER = {
-  ledFrom: 0,
-  ledTo: 0,
-  ledCount: 0,
-  colors: ['#FF4500', '#FF8C00', '#FFD700', '#FFA500', '#FF6347'],
-  scenarios: [],
-  useValueNoise: false,
-  speedMultiplier: 10
+  ledFrom: 803,
+  ledTo: 896,
+  ledCount: 93,
+  colors: ['#FF4500', '#FF8C00', '#FFD700', '#CC0000', '#FFFF80'],
+  scenarios: [
+    { name: 'Nacht', start: 0, end: 100, leds: [] },
+    { name: 'Tag-Nacht', start: 0, end: 50, leds: [] },
+    { name: 'Nacht-Tag', start: 0, end: 25, leds: [] }
+  ],
+  useValueNoise: true,
+  speedMultiplier: 15
 };
 
 const DEFAULT_LED = {
