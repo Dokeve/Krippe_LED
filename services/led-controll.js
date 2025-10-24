@@ -349,6 +349,35 @@ export async function applyModuleAuto() {
         const blackoutProb = Number.isFinite(Number(fire.blackoutProb)) ? Number(fire.blackoutProb) : 0.02;
         const colorScatter = Number.isFinite(Number(fire.colorScatter)) ? Number(fire.colorScatter) : 0.7;
         const lowFreq = 0.02; // gentle slow sway
+        // optionally precompute an even color distribution per LED
+        let perLedColors = null;
+        if (fire.spreadColorsEvenly) {
+          // build bucket with nearly-equal counts per color
+          const bucket = [];
+          const baseCount = Math.floor(count / colors.length) || 0;
+          let remainder = count - baseCount * colors.length;
+          for (let ci = 0; ci < colors.length; ci += 1) {
+            for (let k = 0; k < baseCount; k += 1) bucket.push(colors[ci]);
+            if (remainder > 0) { bucket.push(colors[ci]); remainder -= 1; }
+          }
+          // deterministic shuffle of positions to spread colors across the segment
+          const positions = Array.from({ length: count }, (_, i) => i).sort((a, b) => pseudo(a + baseTick * 13) - pseudo(b + baseTick * 13));
+          perLedColors = new Array(count);
+          for (let i = 0; i < count; i += 1) {
+            perLedColors[positions[i]] = bucket[i % bucket.length] || colors[i % colors.length];
+          }
+        }
+
+        function correctGreenish(hex) {
+          const rgb = hexToRgb(hex);
+          // if green dominates strongly, reduce it slightly and boost red to avoid greenish yellows
+          if (rgb.g > rgb.r && rgb.g > rgb.b) {
+            rgb.g = Math.round(rgb.g * 0.75);
+            rgb.r = Math.min(255, Math.round(rgb.r + (Math.round((255 - rgb.r) * 0.12))));
+          }
+          return rgbToHex(rgb);
+        }
+
         for (let offset = 0; offset < count; offset += 1) {
           const absolute = fromIdx + offset;
           const rseed = pseudo(absolute + 1);
@@ -380,12 +409,17 @@ export async function applyModuleAuto() {
             brightness = 0;
           }
 
-          // choose palette position with scatter so neighboring LEDs can differ
-          const palettePos = (tFast * 0.02 + (offset * colorScatter * (0.2 + rseed * 0.8))) % colors.length;
-          const idx = Math.floor(palettePos) % colors.length;
-          const next = (idx + 1) % colors.length;
-          const tt = palettePos - Math.floor(palettePos);
-          let baseColor = lerpColor(colors[idx], colors[next], tt);
+          // choose color: either precomputed per-LED distribution or palette interpolation with scatter
+          let baseColor = null;
+          if (Array.isArray(perLedColors) && perLedColors[offset]) {
+            baseColor = sanitizeHex(perLedColors[offset]);
+          } else {
+            const palettePos = (tFast * 0.02 + (offset * colorScatter * (0.2 + rseed * 0.8))) % colors.length;
+            const idx = Math.floor(palettePos) % colors.length;
+            const next = (idx + 1) % colors.length;
+            const tt = palettePos - Math.floor(palettePos);
+            baseColor = lerpColor(colors[idx], colors[next], tt);
+          }
 
           // occasional quick color shift to create warm/cool flickers
           const colorShift = pseudo(absolute + 77);
@@ -394,6 +428,9 @@ export async function applyModuleAuto() {
           } else if (colorShift < 0.15) {
             baseColor = lerpColor(baseColor, '#FFD700', (0.15 - colorShift) * 6.666);
           }
+
+          // correct any strong green bias that can make yellow look green
+          baseColor = correctGreenish(baseColor);
 
           // brightness -> dim factor roughly in 0.2..1.4 range for lively flames
           const brightnessFactor = Math.max(0.2, Math.min(1.4, 0.2 + brightness * 1.5));

@@ -23,7 +23,12 @@ const DEFAULT_LAGERFEUER = {
     { name: 'Nacht-Tag', start: 0, end: 25, leds: [] }
   ],
   useValueNoise: true,
-  speedMultiplier: 15
+  speedMultiplier: 15,
+  smoothingAlpha: 0.6,
+  flickerIntensity: 1.0,
+  blackoutProb: 0.25,
+  colorScatter: 0.7,
+  spreadColorsEvenly: false
 };
 
 const DEFAULT_LED = {
@@ -124,7 +129,12 @@ function sanitizeLagerfeuer(lf) {
     : [];
   const useValueNoise = !!lf.useValueNoise;
   const speedMultiplier = Number.isFinite(Number(lf.speedMultiplier)) ? Math.max(1, Number(lf.speedMultiplier)) : 10;
-  return { ledFrom, ledTo, ledCount, colors, scenarios, useValueNoise, speedMultiplier };
+  const smoothingAlpha = Number.isFinite(Number(lf.smoothingAlpha)) ? Math.max(0, Math.min(1, Number(lf.smoothingAlpha))) : 0.6;
+  const flickerIntensity = Number.isFinite(Number(lf.flickerIntensity)) ? Number(lf.flickerIntensity) : 1.0;
+  const blackoutProb = Number.isFinite(Number(lf.blackoutProb)) ? Math.max(0, Math.min(1, Number(lf.blackoutProb))) : 0.25;
+  const colorScatter = Number.isFinite(Number(lf.colorScatter)) ? Number(lf.colorScatter) : 0.7;
+  const spreadColorsEvenly = !!lf.spreadColorsEvenly;
+  return { ledFrom, ledTo, ledCount, colors, scenarios, useValueNoise, speedMultiplier, smoothingAlpha, flickerIntensity, blackoutProb, colorScatter, spreadColorsEvenly };
 }
 
 function sanitizeConfig(input = {}) {

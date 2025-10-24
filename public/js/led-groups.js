@@ -242,6 +242,11 @@ document.addEventListener("DOMContentLoaded", () => {
       colors: cols,
       useValueNoise: !!document.getElementById(prefix + '-lagerfeuer-use-value-noise')?.checked,
       speedMultiplier: Number.parseFloat(document.getElementById(prefix + '-lagerfeuer-speed-multiplier')?.value) || 10,
+      smoothingAlpha: Number.parseFloat(document.getElementById(prefix + '-lagerfeuer-smoothing-alpha')?.value) || 0.6,
+      flickerIntensity: Number.parseFloat(document.getElementById(prefix + '-lagerfeuer-flicker-intensity')?.value) || 1.0,
+      colorScatter: Number.parseFloat(document.getElementById(prefix + '-lagerfeuer-color-scatter')?.value) || 0.8,
+      blackoutProb: Number.parseFloat(document.getElementById(prefix + '-lagerfeuer-blackout-prob')?.value) || 0.25,
+      spreadColorsEvenly: !!document.getElementById(prefix + '-lagerfeuer-spread-colors')?.checked,
       scenarios: sc
     };
   }
@@ -296,7 +301,12 @@ document.addEventListener("DOMContentLoaded", () => {
           if (sel) sel.value = cols[i-1] || sel.value;
         }
         document.getElementById(prefix + '-lagerfeuer-use-value-noise').checked = !!data.useValueNoise;
-        document.getElementById(prefix + '-lagerfeuer-speed-multiplier').value = Number.isFinite(Number(data.speedMultiplier)) ? Number(data.speedMultiplier) : 10;
+  document.getElementById(prefix + '-lagerfeuer-speed-multiplier').value = Number.isFinite(Number(data.speedMultiplier)) ? Number(data.speedMultiplier) : 10;
+  document.getElementById(prefix + '-lagerfeuer-smoothing-alpha').value = Number.isFinite(Number(data.smoothingAlpha)) ? Number(data.smoothingAlpha) : 0.6;
+  document.getElementById(prefix + '-lagerfeuer-flicker-intensity').value = Number.isFinite(Number(data.flickerIntensity)) ? Number(data.flickerIntensity) : 1.0;
+  document.getElementById(prefix + '-lagerfeuer-color-scatter').value = Number.isFinite(Number(data.colorScatter)) ? Number(data.colorScatter) : 0.8;
+  document.getElementById(prefix + '-lagerfeuer-blackout-prob').value = Number.isFinite(Number(data.blackoutProb)) ? Number(data.blackoutProb) : 0.25;
+  document.getElementById(prefix + '-lagerfeuer-spread-colors').checked = !!data.spreadColorsEvenly;
 
         const host = document.getElementById(prefix + '-lagerfeuer-scenarios');
         if (host) {
