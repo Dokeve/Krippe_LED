@@ -342,39 +342,64 @@ export async function applyModuleAuto() {
   const useValueNoise = !!(fire.useValueNoise);
   const speedMultiplier = Number.isFinite(Number(fire.speedMultiplier)) ? Number(fire.speedMultiplier) : 10; // default 10x
         const smoothingAlpha = Number.isFinite(Number(fire.smoothingAlpha)) ? Number(fire.smoothingAlpha) : 0.6;
+        // Improved flicker: make per-LED brightness, on/off, and color vary more chaotically
+        // Parameters available in `fire` (optional): useValueNoise, speedMultiplier, smoothingAlpha,
+        // flickerIntensity (0..2), blackoutProb (0..1), colorScatter (0..2)
+        const flickerIntensity = Number.isFinite(Number(fire.flickerIntensity)) ? Number(fire.flickerIntensity) : 1.0;
+        const blackoutProb = Number.isFinite(Number(fire.blackoutProb)) ? Number(fire.blackoutProb) : 0.02;
+        const colorScatter = Number.isFinite(Number(fire.colorScatter)) ? Number(fire.colorScatter) : 0.7;
+        const lowFreq = 0.02; // gentle slow sway
         for (let offset = 0; offset < count; offset += 1) {
           const absolute = fromIdx + offset;
           const rseed = pseudo(absolute + 1);
-          // speed varies between 0.4 .. 2.2 for more variety, scaled by multiplier
-          const speed = (0.4 + rseed * 1.8) * speedMultiplier;
-          // position along the color palette (fractional index)
-          // if value-noise is enabled, use valueNoise for smoother temporal variation
-          let temporal = baseTick * 0.45 * speed;
+
+          // time bases
+          const tSlow = getTick() * lowFreq * (0.6 + rseed * 0.8);
+          const tFast = getTick() * 0.45 * speedMultiplier * (0.6 + rseed * 0.8);
+
+          // noise-driven brightness [0..1]
+          let n = 0;
           if (useValueNoise) {
-            // valueNoise(seed, x) returns [0..1) — scale it to palette length and combine with temporal
-            const vn = valueNoise(absolute + 13, baseTick * 0.05 * speed);
-            temporal = (vn * colors.length) + (baseTick * 0.02 * speed);
+            // combine two noise octaves for richer structure
+            const n1 = valueNoise(absolute + 13, tFast * 0.05);
+            const n2 = valueNoise(absolute + 19, tSlow * 0.12);
+            n = (n1 * 0.7) + (n2 * 0.3);
+          } else {
+            n = pseudo(absolute * 37 + Math.floor(tFast));
           }
-          const pos = (temporal + rseed * colors.length) % colors.length;
-          const idx = Math.floor(pos) % colors.length;
+
+          // add a slow sinusoidal sway to avoid completely deterministic pattern
+          const sway = 0.5 + 0.5 * Math.sin(tSlow + rseed * 6.2831);
+
+          // final brightness with per-LED random variation and flickerIntensity
+          let brightness = clamp01(n * (0.5 + 0.5 * rseed) * sway * flickerIntensity);
+
+          // occasional brief blackout or spark
+          if (pseudo(getTick() + absolute * 17) < blackoutProb) {
+            // short blackout
+            brightness = 0;
+          }
+
+          // choose palette position with scatter so neighboring LEDs can differ
+          const palettePos = (tFast * 0.02 + (offset * colorScatter * (0.2 + rseed * 0.8))) % colors.length;
+          const idx = Math.floor(palettePos) % colors.length;
           const next = (idx + 1) % colors.length;
-          const t = pos - Math.floor(pos);
-          // blend neighbor colors (uses HSL-aware lerpColor)
-          let baseColor = lerpColor(colors[idx], colors[next], t);
+          const tt = palettePos - Math.floor(palettePos);
+          let baseColor = lerpColor(colors[idx], colors[next], tt);
 
-          // small hue/saturation jitter to avoid banding (blend slightly towards a warmer orange)
-          const jitter = (pseudo(absolute + 51) - 0.5) * 0.25; // -0.125 .. +0.125
-          if (Math.abs(jitter) > 0.001) {
-            // warmColor chosen to bias towards an orange/gold
-            const warmColor = '#FFB347';
-            baseColor = lerpColor(baseColor, warmColor, Math.abs(jitter));
+          // occasional quick color shift to create warm/cool flickers
+          const colorShift = pseudo(absolute + 77);
+          if (colorShift > 0.65) {
+            baseColor = lerpColor(baseColor, '#FF4500', (colorShift - 0.65) * 2.857); // up to ~1
+          } else if (colorShift < 0.15) {
+            baseColor = lerpColor(baseColor, '#FFD700', (0.15 - colorShift) * 6.666);
           }
 
-          // stronger brightness modulation to simulate lively flames (range approx 0.55..1.4)
-          const sinPart = Math.sin((baseTick * 0.5 + rseed * 10) * speed);
-          const bright = 0.55 + (pseudo(absolute + 97) * 0.5) + sinPart * 0.15;
-          const computed = dimHex(baseColor, Math.max(0.35, Math.min(1.4, bright)));
-          // blend with previous frame to reduce blockiness
+          // brightness -> dim factor roughly in 0.2..1.4 range for lively flames
+          const brightnessFactor = Math.max(0.2, Math.min(1.4, 0.2 + brightness * 1.5));
+          const computed = dimHex(baseColor, brightnessFactor);
+
+          // blend with previous frame for smoothing
           if (lastFrame && Array.isArray(lastFrame) && lastFrame[absolute]) {
             frame[absolute] = blendHex(lastFrame[absolute], computed, smoothingAlpha);
           } else {
