@@ -330,16 +330,28 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("add-weihnacht-subgroup")?.addEventListener("click", () => addSubgroup("weihnacht-subgroups"));
   document.getElementById("save-advent-group")?.addEventListener("click", saveAll);
   document.getElementById("save-weihnacht-group")?.addEventListener("click", saveAll);
-  document.getElementById("add-lagerfeuer-scenario")?.addEventListener("click", () => {
-    const host = document.getElementById("lagerfeuer-scenarios");
+  // advent group: add scenario button
+  document.getElementById("add-advent-lagerfeuer-scenario")?.addEventListener("click", () => {
+    const host = document.getElementById("advent-lagerfeuer-scenarios");
     if (!host) return;
     const row = scenarioRowTemplate();
-    // Lagerfeuer braucht keine LED-Liste
     const ledSel = row.querySelector('.led-selection'); if (ledSel) ledSel.remove();
     host.appendChild(row);
   });
-  document.getElementById("save-lagerfeuer")?.addEventListener("click", saveAll);
-  document.getElementById("test-lagerfeuer")?.addEventListener("click", () => log("Lagerfeuer Simulation gestartet"));
+  // weihnacht group: add scenario button
+  document.getElementById("add-weihnacht-lagerfeuer-scenario")?.addEventListener("click", () => {
+    const host = document.getElementById("weihnacht-lagerfeuer-scenarios");
+    if (!host) return;
+    const row = scenarioRowTemplate();
+    const ledSel = row.querySelector('.led-selection'); if (ledSel) ledSel.remove();
+    host.appendChild(row);
+  });
+
+  // save/test buttons per group
+  document.getElementById("save-advent-lagerfeuer")?.addEventListener("click", saveAll);
+  document.getElementById("save-weihnacht-lagerfeuer")?.addEventListener("click", saveAll);
+  document.getElementById("test-advent-lagerfeuer")?.addEventListener("click", () => log("Advent-Lagerfeuer Simulation gestartet"));
+  document.getElementById("test-weihnacht-lagerfeuer")?.addEventListener("click", () => log("Weihnacht-Lagerfeuer Simulation gestartet"));
   document.getElementById("save-transition-palettes")?.addEventListener("click", saveAll);
 
   document.querySelectorAll(".toggle-group").forEach((button) => {

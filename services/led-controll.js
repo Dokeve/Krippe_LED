@@ -283,7 +283,16 @@ export async function applyModuleAuto() {
     }
   }
 
-  const fire = ledCfg.lagerfeuer;
+  // select the active group-specific lagerfeuer configuration
+  // prefer advent when active, then weihnacht, fallback to legacy top-level lagerfeuer
+  let fire = null;
+  if (ledCfg.adventActive && ledCfg.adventLagerfeuer) {
+    fire = ledCfg.adventLagerfeuer;
+  } else if (ledCfg.weihnachtActive && ledCfg.weihnachtLagerfeuer) {
+    fire = ledCfg.weihnachtLagerfeuer;
+  } else {
+    fire = ledCfg.lagerfeuer || null;
+  }
   if (fire && Array.isArray(fire.colors) && Array.isArray(fire.scenarios)) {
     const colors = fire.colors.filter((value) => /^#[0-9a-f]{6}$/i.test(value));
     if (colors.length > 0) {
