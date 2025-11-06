@@ -4,15 +4,9 @@
   <meta charset="UTF-8">
   <title>LED-Sound-Bachlauf – Start</title>
   <link rel="stylesheet" href="/styles.css">
-  <!-- FullCalendar: CDN + Fallback lokal -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+  <!-- FullCalendar: lokal (kein CDN) -->
   <link rel="stylesheet" href="/vendor/fullcalendar/index.global.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-  <script>
-    if (typeof FullCalendar === 'undefined') {
-      var s=document.createElement('script'); s.src='/vendor/fullcalendar/index.global.min.js'; document.head.appendChild(s);
-    }
-  </script>
+  <script src="/vendor/fullcalendar/index.global.min.js"></script>
   <script defer src="js/index.js"></script>
   <script defer src="js/statusbar.js"></script>
   <script defer src="js/footer.js"></script>
