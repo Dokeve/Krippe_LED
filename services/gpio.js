@@ -13,7 +13,7 @@ let desiredPumpState = false;
 
 export async function initGpio() {
   const pumpPin = Number(config.gpio?.pump ?? 19);
-  const btnPin = Number(config.gpio?.audioButton ?? 17);
+  const btnPin = Number(config.gpio?.audioButton ?? 5);
   const activeHigh = config.gpio?.activeHigh !== false;
 
   const MAX_ATTEMPTS = Number(process.env.GPIO_INIT_RETRIES ?? 5);
