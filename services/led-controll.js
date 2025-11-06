@@ -3,6 +3,7 @@
 import ws from './ws2812.js';
 import { getLedConfig } from './led-store.js';
 import { getActiveScenarioAt, lerpColor } from './scenario-controll.js';
+import { applyLagerfeuer } from './lagerfeuer.js';
 import config from '../config.js';
 
 const LED_OFF = '#000000';
@@ -283,168 +284,11 @@ export async function applyModuleAuto() {
     }
   }
 
-  // select the active group-specific lagerfeuer configuration
-  // prefer advent when active, then weihnacht, fallback to legacy top-level lagerfeuer
-  let fire = null;
-  if (ledCfg.adventActive && ledCfg.adventLagerfeuer) {
-    fire = ledCfg.adventLagerfeuer;
-  } else if (ledCfg.weihnachtActive && ledCfg.weihnachtLagerfeuer) {
-    fire = ledCfg.weihnachtLagerfeuer;
-  } else {
-    fire = ledCfg.lagerfeuer || null;
-  }
-  if (fire && Array.isArray(fire.colors) && Array.isArray(fire.scenarios)) {
-    const colors = fire.colors.filter((value) => /^#[0-9a-f]{6}$/i.test(value));
-    if (colors.length > 0) {
-      // helpers: deterministic pseudo-random in [0,1) per index
-      const pseudo = (n) => {
-        const a = 9301, c = 49297, m = 233280;
-        return ((n * a + c) % m) / m;
-      };
-      // Optional: lightweight value-noise function (fast) that can be used instead of pseudo() for smoother
-      // spatial variation. Perlin noise is more natural but heavier; value-noise with smoothstep is cheap
-      // and often good enough for visual flicker. Example usage: val = valueNoise(absolute, t)
-      const valueNoise = (seed, x) => {
-        const xi = Math.floor(x);
-        const xf = x - xi;
-        const smooth = (u) => u * u * (3 - 2 * u);
-        const a = pseudo(seed + xi);
-        const b = pseudo(seed + xi + 1);
-        return a + (b - a) * smooth(xf);
-      };
-      const dimHex = (hex, factor) => {
-        const h = sanitizeHex(hex, LED_OFF).slice(1);
-        const val = parseInt(h, 16) >>> 0;
-        let r = (val >> 16) & 0xff;
-        let g = (val >> 8) & 0xff;
-        let b = val & 0xff;
-        r = Math.max(0, Math.min(255, Math.round(r * factor)));
-        g = Math.max(0, Math.min(255, Math.round(g * factor)));
-        b = Math.max(0, Math.min(255, Math.round(b * factor)));
-        const toHex = (n) => n.toString(16).padStart(2, '0');
-        return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
-      };
-
-      for (const scenario of fire.scenarios) {
-        if (!scenario || scenario.name !== scenarioInfo.name) continue;
-        const start = parseInt(scenario.start, 10);
-        const end = parseInt(scenario.end, 10);
-        if (!withinWindow(scenarioInfo.second, start, end)) continue;
-
-        const fromIdx = Math.max(0, fire.ledFrom | 0);
-        const toIdx = Math.min(frame.length - 1, fire.ledTo | 0);
-        const count = Math.max(0, toIdx - fromIdx + 1);
-        if (count <= 0) continue;
-
-  // Per-LED flicker: each LED has a deterministic speed offset and phase
-  const baseTick = getTick();
-  // read optional per-fire configuration (use valueNoise?, speed multiplier)
-  const useValueNoise = !!(fire.useValueNoise);
-  const speedMultiplier = Number.isFinite(Number(fire.speedMultiplier)) ? Number(fire.speedMultiplier) : 10; // default 10x
-        const smoothingAlpha = Number.isFinite(Number(fire.smoothingAlpha)) ? Number(fire.smoothingAlpha) : 0.6;
-        // Improved flicker: make per-LED brightness, on/off, and color vary more chaotically
-        // Parameters available in `fire` (optional): useValueNoise, speedMultiplier, smoothingAlpha,
-        // flickerIntensity (0..2), blackoutProb (0..1), colorScatter (0..2)
-        const flickerIntensity = Number.isFinite(Number(fire.flickerIntensity)) ? Number(fire.flickerIntensity) : 1.0;
-        const blackoutProb = Number.isFinite(Number(fire.blackoutProb)) ? Number(fire.blackoutProb) : 0.02;
-        const colorScatter = Number.isFinite(Number(fire.colorScatter)) ? Number(fire.colorScatter) : 0.7;
-        const lowFreq = 0.02; // gentle slow sway
-        // optionally precompute an even color distribution per LED
-        let perLedColors = null;
-        if (fire.spreadColorsEvenly) {
-          // build bucket with nearly-equal counts per color
-          const bucket = [];
-          const baseCount = Math.floor(count / colors.length) || 0;
-          let remainder = count - baseCount * colors.length;
-          for (let ci = 0; ci < colors.length; ci += 1) {
-            for (let k = 0; k < baseCount; k += 1) bucket.push(colors[ci]);
-            if (remainder > 0) { bucket.push(colors[ci]); remainder -= 1; }
-          }
-          // deterministic shuffle of positions to spread colors across the segment
-          const positions = Array.from({ length: count }, (_, i) => i).sort((a, b) => pseudo(a + baseTick * 13) - pseudo(b + baseTick * 13));
-          perLedColors = new Array(count);
-          for (let i = 0; i < count; i += 1) {
-            perLedColors[positions[i]] = bucket[i % bucket.length] || colors[i % colors.length];
-          }
-        }
-
-        function correctGreenish(hex) {
-          const rgb = hexToRgb(hex);
-          // if green dominates strongly, reduce it slightly and boost red to avoid greenish yellows
-          if (rgb.g > rgb.r && rgb.g > rgb.b) {
-            rgb.g = Math.round(rgb.g * 0.75);
-            rgb.r = Math.min(255, Math.round(rgb.r + (Math.round((255 - rgb.r) * 0.12))));
-          }
-          return rgbToHex(rgb);
-        }
-
-        for (let offset = 0; offset < count; offset += 1) {
-          const absolute = fromIdx + offset;
-          const rseed = pseudo(absolute + 1);
-
-          // time bases
-          const tSlow = getTick() * lowFreq * (0.6 + rseed * 0.8);
-          const tFast = getTick() * 0.45 * speedMultiplier * (0.6 + rseed * 0.8);
-
-          // noise-driven brightness [0..1]
-          let n = 0;
-          if (useValueNoise) {
-            // combine two noise octaves for richer structure
-            const n1 = valueNoise(absolute + 13, tFast * 0.05);
-            const n2 = valueNoise(absolute + 19, tSlow * 0.12);
-            n = (n1 * 0.7) + (n2 * 0.3);
-          } else {
-            n = pseudo(absolute * 37 + Math.floor(tFast));
-          }
-
-          // add a slow sinusoidal sway to avoid completely deterministic pattern
-          const sway = 0.5 + 0.5 * Math.sin(tSlow + rseed * 6.2831);
-
-          // final brightness with per-LED random variation and flickerIntensity
-          let brightness = clamp01(n * (0.5 + 0.5 * rseed) * sway * flickerIntensity);
-
-          // occasional brief blackout or spark
-          if (pseudo(getTick() + absolute * 17) < blackoutProb) {
-            // short blackout
-            brightness = 0;
-          }
-
-          // choose color: either precomputed per-LED distribution or palette interpolation with scatter
-          let baseColor = null;
-          if (Array.isArray(perLedColors) && perLedColors[offset]) {
-            baseColor = sanitizeHex(perLedColors[offset]);
-          } else {
-            const palettePos = (tFast * 0.02 + (offset * colorScatter * (0.2 + rseed * 0.8))) % colors.length;
-            const idx = Math.floor(palettePos) % colors.length;
-            const next = (idx + 1) % colors.length;
-            const tt = palettePos - Math.floor(palettePos);
-            baseColor = lerpColor(colors[idx], colors[next], tt);
-          }
-
-          // occasional quick color shift to create warm/cool flickers
-          const colorShift = pseudo(absolute + 77);
-          if (colorShift > 0.65) {
-            baseColor = lerpColor(baseColor, '#FF4500', (colorShift - 0.65) * 2.857); // up to ~1
-          } else if (colorShift < 0.15) {
-            baseColor = lerpColor(baseColor, '#FFD700', (0.15 - colorShift) * 6.666);
-          }
-
-          // correct any strong green bias that can make yellow look green
-          baseColor = correctGreenish(baseColor);
-
-          // brightness -> dim factor roughly in 0.2..1.4 range for lively flames
-          const brightnessFactor = Math.max(0.2, Math.min(1.4, 0.2 + brightness * 1.5));
-          const computed = dimHex(baseColor, brightnessFactor);
-
-          // blend with previous frame for smoothing
-          if (lastFrame && Array.isArray(lastFrame) && lastFrame[absolute]) {
-            frame[absolute] = blendHex(lastFrame[absolute], computed, smoothingAlpha);
-          } else {
-            frame[absolute] = computed;
-          }
-        }
-      }
-    }
+  // apply group-specific lagerfeuer (extracted to a dedicated module)
+  try {
+    await applyLagerfeuer({ frame, lastFrame, ledCfg, scenarioInfo, getTick });
+  } catch (e) {
+    console.warn('[lagerfeuer] apply failed:', e?.message || e);
   }
 
   await renderFrame(frame);
