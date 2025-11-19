@@ -1,0 +1,16 @@
+[Unit]
+Description=Forward 127.0.0.1:8889 -> ::1:8888 for pigpiod
+After=network.target
+Wants=pigpiod.service
+
+[Service]
+Type=simple
+[Service]
+Type=simple
+# Use a shell wrapper so systemd doesn't split socat's complex address tokens
+ExecStart=/bin/sh -c '/usr/bin/socat TCP4-LISTEN:8889,bind=127.0.0.1,reuseaddr,fork TCP6:[::1]:8888'
+Restart=on-failure
+RestartSec=2s
+
+[Install]
+WantedBy=multi-user.target

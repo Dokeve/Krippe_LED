@@ -1,0 +1,13 @@
+# Drop-in template: /etc/systemd/system/nativity.service.d/override.conf
+# Purpose: ensure pigpiod is started before nativity and provide PIGPIO env vars.
+# Keep nativity running as root (no User= / Group= lines here).
+
+[Unit]
+Wants=pigpiod.service
+Requires=pigpiod.service
+After=pigpiod.service
+
+[Service]
+Environment=PIGPIO_ADDR=127.0.0.1
+Environment=PIGPIO_PORT=8888
+ExecStartPre=/bin/sh -c 'for i in 1 2 3 4 5; do ss -ltn | grep -q ":8888" && exit 0 || sleep 0.2; done; exit 1'
