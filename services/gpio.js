@@ -1,174 +1,148 @@
 // services/gpio.js
-// Lazy-import pigpio so we can set PIGPIO_ADDR/PIGPIO_PORT before the native
-// binding initialises. This avoids the native library trying to initialise
-// locally (and failing with "Can't lock /var/run/pigpio.pid") if the daemon
-// is running only as a TCP service.
-let Gpio; // assigned after dynamic import
-import fs from 'fs';
-import path from 'path';
-import config from '../config.js';
-import { spawnSync } from 'child_process';
+// Minimal pigpio-client adapter (ESM).
+// Exports: initGpio(), setPump(on), onAudioButton(cb)
 
-let pump = null;
-let audioButton = null;
-let audioButtonHandler = null;
-// gewünschter Pumpenzustand, wird gesetzt auch wenn pigpio noch nicht initialisiert ist
+import config from '../config.js';
+
+let client = null;
+let pumpGpio = null;
+let btnGpio = null;
+let pumpPin = null;
+let btnPin = null;
 let desiredPumpState = false;
+let audioButtonHandler = null;
 
 export async function initGpio() {
-  const pumpPin = Number(config.gpio?.pump ?? 19);
-  const btnPin = Number(config.gpio?.audioButton ?? 5);
+  // compute config values
+  pumpPin = Number(config.gpio?.pump ?? 22);
+  btnPin = Number(config.gpio?.audioButton ?? 17);
   const activeHigh = config.gpio?.activeHigh !== false;
   const PULL = (process.env.PULL || 'down').toLowerCase();
-  // pressedLevel can be determined without pigpio constants
-  const pressedLevel = PULL === 'up' ? 0 : 1; // physical level when button is considered "pressed"
+  const pressedLevel = PULL === 'up' ? 0 : 1;
 
-  const MAX_ATTEMPTS = Number(process.env.GPIO_INIT_RETRIES ?? 5);
-  const RETRY_DELAY_MS = Number(process.env.GPIO_INIT_RETRY_DELAY_MS ?? 500);
+  const host = process.env.PIGPIO_ADDR || '127.0.0.1';
+  const port = Number(process.env.PIGPIO_PORT || 8888);
 
-  // Before trying to initialize pigpio, wait for pigpiod to create its socket/pid
-  const SOCKET_PATH = process.env.PIGPIO_SOCKET_PATH || '/var/run/pigpio.sock';
-  const PID_PATH = process.env.PIGPIO_PID_PATH || '/var/run/pigpio.pid';
-  const SOCKET_WAIT_ATTEMPTS = Number(process.env.PIGPIO_SOCKET_WAIT_ATTEMPTS ?? 10);
-  const SOCKET_WAIT_DELAY_MS = Number(process.env.PIGPIO_SOCKET_WAIT_DELAY_MS ?? 200);
+  console.log(`[GPIO] init config pump=${pumpPin} btn=${btnPin} PULL=${PULL} activeHigh=${activeHigh} host=${host} port=${port}`);
 
+  // helper: validate BCM GPIO number
+  const isValidGpio = (n) => Number.isInteger(n) && n >= 0 && n <= 53;
 
-  let socketOk = false;
-  for (let i = 0; i < SOCKET_WAIT_ATTEMPTS; i++) {
-    try {
-      if (fs.existsSync(SOCKET_PATH) || fs.existsSync(PID_PATH)) {
-        socketOk = true;
-        break;
-      }
-    } catch (e) {
-      // ignore
-    }
-    // wait
-    // eslint-disable-next-line no-await-in-loop
-    await new Promise((res) => setTimeout(res, SOCKET_WAIT_DELAY_MS));
-  }
-  if (!socketOk) {
-    console.warn(`[GPIO] pigpiod socket/pid not found at ${SOCKET_PATH} or ${PID_PATH} after ${SOCKET_WAIT_ATTEMPTS} attempts`);
-    // continue — the retry loop below will still attempt to init and will log errors
-  }
-
-  // If pigpiod appears to be present only as a TCP listener (no unix socket)
-  // and the process environment doesn't explicitly tell the pigpio C library
-  // to use a remote daemon, set PIGPIO_ADDR to the IPv4 forwarder so the
-  // native binding uses the daemon client mode instead of local initialisation.
+  let mod;
   try {
-    const pidExists = fs.existsSync(PID_PATH);
-    const sockExists = fs.existsSync(SOCKET_PATH);
-    if (pidExists && !sockExists && !process.env.PIGPIO_ADDR) {
-      // prefer explicitly configured port if set, otherwise default 8888
-      process.env.PIGPIO_ADDR = process.env.PIGPIO_ADDR || '127.0.0.1';
-      process.env.PIGPIO_PORT = process.env.PIGPIO_PORT || '8888';
-      console.log('[GPIO] detected pigpiod PID without unix socket — setting PIGPIO_ADDR to', process.env.PIGPIO_ADDR);
-    }
-    if (!pidExists && !sockExists) {
-      // prefer explicitly configured port if set, otherwise default 8888
-      console.log('[GPIO] detected pigpiod PID — setting PIGPIO_ADDR to', process.env.PIGPIO_ADDR);
-    }
-  } catch (e) {
-    // ignore
-  }
-
-  // Import pigpio dynamically so that the environment (PIGPIO_ADDR/PIGPIO_PORT)
-  // is already in place when the native binding initialises.
-  try {
-    // ESM dynamic import
-    // eslint-disable-next-line no-await-in-loop
-    const pigpioModule = await import('pigpio');
-    // pigpio ESM export shape: may be { Gpio } or default export; handle both
-    Gpio = pigpioModule.Gpio ?? pigpioModule.default?.Gpio ?? pigpioModule;
+    mod = await import('pigpio-client');
   } catch (err) {
-    console.warn('[GPIO] pigpio import failed — will attempt pigs CLI fallback:', err?.message || err);
-    // if import fails we leave Gpio undefined so the rest of the code will
-    // fall back to the pigs CLI in setPump
+    console.error('[GPIO] failed to import pigpio-client:', err && err.message ? err.message : err);
+    return;
   }
 
-  // Compute pull-up/down constant only if Gpio is available
-  const pud = (Gpio && (PULL === 'up')) ? Gpio.PUD_UP : (Gpio ? Gpio.PUD_DOWN : undefined);
+  const pigpioFactory = mod.pigpio ?? mod.default?.pigpio;
+  if (!pigpioFactory) {
+    console.error('[GPIO] pigpio-client factory not found in module exports');
+    return;
+  }
 
-  let attempt = 0;
-  while (attempt < MAX_ATTEMPTS) {
-    attempt += 1;
-    try {
-      pump = new Gpio(pumpPin, { mode: Gpio.OUTPUT });
-      // apply desired pump state at init according to polarity
-      const initValue = desiredPumpState ? (activeHigh ? 1 : 0) : (activeHigh ? 0 : 1);
-      pump.digitalWrite(initValue);
+  client = pigpioFactory({ host, port });
 
-      if (!Gpio) throw new Error('pigpio binding not available');
+  // wait for connected before creating gpio objects to avoid race conditions
+  client.once('connected', (info) => {
+    console.log('[GPIO] pigpio-client connected info:', JSON.stringify(info));
 
-      audioButton = new Gpio(btnPin, {
-        mode: Gpio.INPUT,
-        pullUpDown: pud,
-        alert: true
-      });
-      audioButton.glitchFilter(50000);
-      audioButton.enableAlert();
-      audioButton.on('alert', (level) => {
-        // Level is the physical logic level (0 or 1). Depending on pull-up/down wiring
-        // the pressed state can be 0 (pull-up, button to GND) or 1 (pull-down).
-        try {
-          if (level === pressedLevel && typeof audioButtonHandler === 'function') {
-            audioButtonHandler();
-          }
-        } catch (e) {
-          // swallow handler errors to avoid crashing the gpio init loop
-          console.warn('[GPIO] audioButton handler error:', e?.message || e);
-        }
-      });
+    client.on('error', (err) => console.warn('[GPIO] pigpio-client error:', err && err.message ? err.message : err));
 
-  console.log(`[GPIO] pump@${pumpPin} (out, activeHigh=${activeHigh}), audioButton@${btnPin} (in,alert) using pigpio (pull=${PULL})`);
-      return;
-    } catch (error) {
-      const msg = error?.message || String(error);
-      // If this was the last attempt, log a warning and give up
-      if (attempt >= MAX_ATTEMPTS) {
-        console.warn('[GPIO] Initialisierung übersprungen:', msg);
-        return;
+    // Pump GPIO: create + configure
+    if (!isValidGpio(pumpPin)) {
+      console.warn(`[GPIO] pump pin ${pumpPin} is not a valid gpio number, skipping pump setup`);
+      pumpGpio = null;
+    } else {
+      try {
+        pumpGpio = client.gpio(pumpPin);
+        if (typeof pumpGpio.modeSet === 'function') pumpGpio.modeSet('output');
+        const initValue = desiredPumpState ? (activeHigh ? 1 : 0) : (activeHigh ? 0 : 1);
+        if (typeof pumpGpio.write === 'function') pumpGpio.write(initValue);
+      } catch (err) {
+        console.error('[GPIO] pump gpio initialization failed:', err && err.message ? err.message : err);
+        pumpGpio = null;
       }
-      // Otherwise wait a bit and retry
-      console.warn(`[GPIO] gpioInitialise fehlgeschlagen (attempt ${attempt}/${MAX_ATTEMPTS}): ${msg} — retrying in ${RETRY_DELAY_MS}ms`);
-      // sleep
-      await new Promise((res) => setTimeout(res, RETRY_DELAY_MS));
     }
-  }
+
+    // Button GPIO: create + configure
+    if (!isValidGpio(btnPin)) {
+      console.warn(`[GPIO] button pin ${btnPin} is not a valid gpio number, skipping button setup`);
+      btnGpio = null;
+    } else {
+      try {
+        btnGpio = client.gpio(btnPin);
+        if (typeof btnGpio.modeSet === 'function') btnGpio.modeSet('input');
+
+        if (typeof btnGpio.pullUpDown === 'function') {
+          const pudVal = PULL === 'up' ? 2 : PULL === 'down' ? 1 : 0;
+          btnGpio.pullUpDown(pudVal, () => {
+            console.log(`[GPIO] pullUpDown set to ${PULL} (pud=${pudVal}) for btn=${btnPin}`);
+            try {
+              if (typeof btnGpio.digitalRead === 'function') {
+                const lvl = btnGpio.digitalRead();
+                console.log(`[GPIO] btn=${btnPin} digitalRead => ${lvl}`);
+              } else if (typeof btnGpio.read === 'function') {
+                const maybe = btnGpio.read();
+                if (maybe && typeof maybe.then === 'function') {
+                  maybe.then(lvl => console.log(`[GPIO] btn=${btnPin} read() => ${lvl}`)).catch(()=>{});
+                } else {
+                  console.log(`[GPIO] btn=${btnPin} read() => ${maybe}`);
+                }
+              }
+            } catch (e) {}
+          });
+        } else {
+          console.log('[GPIO] btnGpio.pullUpDown not supported by client');
+        }
+
+        const notifyHandler = (level, tick) => {
+          console.log(`[GPIO] pigpio-client notify btn=${btnPin} level=${level} tick=${tick}`);
+          if (level === pressedLevel && typeof audioButtonHandler === 'function') audioButtonHandler();
+        };
+
+        if (typeof btnGpio.notify === 'function') {
+          btnGpio.notify(notifyHandler);
+        } else if (typeof btnGpio.on === 'function') {
+          btnGpio.on('alert', notifyHandler);
+        } else {
+          console.log('[GPIO] btnGpio does not support notify/on; no button events registered');
+        }
+      } catch (err) {
+        console.error('[GPIO] button gpio initialization failed:', err && err.message ? err.message : err);
+        btnGpio = null;
+      }
+    }
+
+    console.log(`[GPIO] using pigpio-client ${host}:${port} pump=${pumpPin} btn=${btnPin}`);
+  });
+
+  client.on('error', (err) => console.warn('[GPIO] pigpio-client error:', err && err.message ? err.message : err));
 }
 
 export function setPump(on) {
-  try {
-    // Merke den gewünschten Zustand auch wenn pump noch null ist
-    desiredPumpState = !!on;
-    if (pump) {
-      const activeHigh = config.gpio?.activeHigh !== false;
-      const value = on ? (activeHigh ? 1 : 0) : (activeHigh ? 0 : 1);
-      pump.digitalWrite(value);
-      try { console.log(`[GPIO] setPump -> pin write value=${value} (on=${on}, activeHigh=${activeHigh})`); } catch {}
-    } else {
-      // Fallback: if pigpio isn't available, try using the pigs CLI which talks to pigpiod
-      try {
-        const activeHigh = config.gpio?.activeHigh !== false;
-        const pin = Number(config.gpio?.pump ?? 19);
-        const value = on ? (activeHigh ? 1 : 0) : (activeHigh ? 0 : 1);
-        // spawnSync to perform the write synchronously
-        const res = spawnSync('pigs', ['w', String(pin), String(value)], { encoding: 'utf8' });
-        if (res.error) {
-          console.warn('[GPIO] pigs CLI fallback failed:', res.error.message || res.error);
-        } else if (res.status !== 0) {
-          console.warn('[GPIO] pigs CLI fallback exited with status', res.status, res.stdout || res.stderr);
-        } else {
-          console.log(`[GPIO] pigs fallback -> pin write value=${value} (on=${on}, activeHigh=${activeHigh})`);
-        }
-      } catch (err) {
-        console.warn('[GPIO] pigs fallback thrown error:', err?.message || err);
-      }
-    }
-  } catch (error) {
-    console.warn('[GPIO] setPump Fehler:', error?.message || error);
+  desiredPumpState = !!on;
+  const activeHigh = config.gpio?.activeHigh !== false;
+  const value = on ? (activeHigh ? 1 : 0) : (activeHigh ? 0 : 1);
+
+  if (pumpGpio && typeof pumpGpio.write === 'function') {
+    pumpGpio.write(value);
+    console.log(`[GPIO] setPump -> gpio.write ${pumpPin}=${value}`);
+    return;
   }
+
+  if (client && typeof client.digitalWrite === 'function') {
+    try {
+      client.digitalWrite(pumpPin, value);
+      console.log(`[GPIO] setPump -> digitalWrite ${pumpPin}=${value}`);
+      return;
+    } catch (e) {
+      // fall through to warning below
+    }
+  }
+
+  console.warn('[GPIO] setPump: no gpio client available to write');
 }
 
 export function onAudioButton(cb) {
