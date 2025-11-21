@@ -105,7 +105,7 @@ const logging = {
 
 const gpio = {
   pump: toInt(process.env.PUMP_GPIO, 22),
-  audioButton: toInt(process.env.AUDIO_BUTTON_GPIO, 17)
+  audioButton: toInt(process.env.AUDIO_BUTTON_GPIO, 5)
 };
 
 // Pump relay polarity: set PUMP_ACTIVE_HIGH=0 or false in .env to invert (active LOW modules)
