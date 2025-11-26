@@ -30,6 +30,7 @@ const DEFAULT_LAGERFEUER = {
   colorScatter: 0.7,
   spreadColorsEvenly: false
 };
+DEFAULT_LAGERFEUER.useSimple = false;
 
 const DEFAULT_LED = {
   adventActive: false,
@@ -134,7 +135,8 @@ function sanitizeLagerfeuer(lf) {
   const blackoutProb = Number.isFinite(Number(lf.blackoutProb)) ? Math.max(0, Math.min(1, Number(lf.blackoutProb))) : 0.25;
   const colorScatter = Number.isFinite(Number(lf.colorScatter)) ? Number(lf.colorScatter) : 0.7;
   const spreadColorsEvenly = !!lf.spreadColorsEvenly;
-  return { ledFrom, ledTo, ledCount, colors, scenarios, useValueNoise, speedMultiplier, smoothingAlpha, flickerIntensity, blackoutProb, colorScatter, spreadColorsEvenly };
+  const useSimple = !!lf.useSimple;
+  return { ledFrom, ledTo, ledCount, colors, scenarios, useValueNoise, speedMultiplier, smoothingAlpha, flickerIntensity, blackoutProb, colorScatter, spreadColorsEvenly, useSimple };
 }
 
 function sanitizeConfig(input = {}) {

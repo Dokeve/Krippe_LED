@@ -196,9 +196,9 @@ function applyRangeToFrame(frame, from, to, baseColor, perLed) {
   }
 }
 
-export async function applyModuleOn(colorHex = '#FFD700') {
+export async function applyModuleOn(colorHex = '#fdc938') {
   const count = await getLedCount();
-  const color = sanitizeHex(colorHex, '#FFD700');
+  const color = sanitizeHex(colorHex, '#fdc938');
   await renderFrame(new Array(count).fill(color));
 }
 

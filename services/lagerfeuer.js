@@ -70,13 +70,65 @@ function correctGreenish(hex) {
   return rgbToHex(rgb);
 }
 
+// --- simple implementation (überführt von lagerfeuer-simple.js) ---
+function randInt(min, max) {
+  const a = Math.floor(min) || 0;
+  const b = Math.floor(max) || 0;
+  if (b <= a) return a;
+  return Math.floor(Math.random() * (b - a)) + a;
+}
+
+export function applyLagerfeuerSimple({ frame, lastFrame, ledCfg, scenarioInfo, getTick }) {
+  if (!frame || !Array.isArray(frame)) return;
+
+  let fire = null;
+  if (ledCfg?.adventActive && ledCfg?.adventLagerfeuer) {
+    fire = ledCfg.adventLagerfeuer;
+  } else if (ledCfg?.weihnachtActive && ledCfg?.weihnachtLagerfeuer) {
+    fire = ledCfg.weihnachtLagerfeuer;
+  } else {
+    fire = ledCfg?.lagerfeuer || null;
+  }
+
+  if (!fire) return;
+
+  const frameLen = frame.length;
+  const fromIdx = Math.max(0, fire.ledFrom | 0);
+  const toIdx = Math.min(frameLen - 1, fire.ledTo | 0);
+  const count = Math.max(0, toIdx - fromIdx + 1);
+  if (count <= 0) return;
+
+  const LightValue = new Array(count);
+
+  for (let i = 0; i < count; i += 1) {
+    const r = randInt(0, 200);
+    const g = randInt(0,20 );
+    const b = randInt(0, 0);
+    LightValue[i] = { r, g, b };
+  }
+
+  const lightsOff = randInt(0, 4);
+  for (let k = 0; k < lightsOff; k += 1) {
+    const sel = randInt(0, count);
+    LightValue[sel] = { r: randInt(0, 200), g: randInt(64, 128), b: randInt(0, 0) };
+  }
+
+  for (let offset = 0; offset < count; offset += 1) {
+    const absolute = fromIdx + offset;
+    if (absolute < 0 || absolute >= frameLen) continue;
+    const v = LightValue[offset];
+    frame[absolute] = rgbToHex(v);
+  }
+}
+
+// --- end simple implementation ------------------------------------------------
+
 // applyLagerfeuer mutates `frame` in-place. It expects `frame` to be an array of hex colors
 // `lastFrame` may be provided to smooth across frames. `ledCfg` is the full led configuration
 // (used to select advent/weihnacht/legacy fire), `scenarioInfo` is the active scenario object
 // and `getTick` is a function returning the current tick number.
-export async function applyLagerfeuer({ frame, lastFrame, ledCfg, scenarioInfo, getTick }) {
+export function applyLagerfeuer({ frame, lastFrame, ledCfg, scenarioInfo, getTick }) {
   if (!frame || !Array.isArray(frame)) return;
-
   // select the active group-specific lagerfeuer configuration
   let fire = null;
   if (ledCfg.adventActive && ledCfg.adventLagerfeuer) {
@@ -85,6 +137,16 @@ export async function applyLagerfeuer({ frame, lastFrame, ledCfg, scenarioInfo, 
     fire = ledCfg.weihnachtLagerfeuer;
   } else {
     fire = ledCfg.lagerfeuer || null;
+  }
+
+  // If the configuration requests the simple implementation, delegate to it.
+  if (fire && fire.useSimple) {
+    try {
+      applyLagerfeuerSimple({ frame, lastFrame, ledCfg, scenarioInfo, getTick });
+    } catch (e) {
+      console.warn('[lagerfeuer] simple apply failed:', e?.message || e);
+    }
+    return;
   }
 
   if (!fire || !Array.isArray(fire.colors) || !Array.isArray(fire.scenarios)) return;
@@ -142,9 +204,8 @@ export async function applyLagerfeuer({ frame, lastFrame, ledCfg, scenarioInfo, 
     for (let offset = 0; offset < count; offset += 1) {
       const absolute = fromIdx + offset;
       const rseed = pseudo(absolute + 1);
-
-      const tSlow = getTick() * lowFreq * (0.6 + rseed * 0.8);
-      const tFast = getTick() * 0.45 * speedMultiplier * (0.6 + rseed * 0.8);
+      const tSlow = baseTick * lowFreq * (0.6 + rseed * 0.8);
+      const tFast = baseTick * 0.45 * speedMultiplier * (0.6 + rseed * 0.8);
 
       let n = 0;
       if (useValueNoise) {
@@ -159,7 +220,7 @@ export async function applyLagerfeuer({ frame, lastFrame, ledCfg, scenarioInfo, 
 
       let brightness = clamp01(n * (0.5 + 0.5 * rseed) * sway * flickerIntensity);
 
-      if (pseudo(getTick() + absolute * 17) < blackoutProb) {
+      if (pseudo(baseTick + absolute * 17) < blackoutProb) {
         brightness = 0;
       }
 
