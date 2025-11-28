@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+    <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Krippe Steuerung</title>
+    <link rel="stylesheet" href="/gui/gui.css">
+  </head>
+  <body>
+    <header class="gui-header">
+      <a class="home-link" href="/">Home</a>
+      <h1>Krippe Steuerung</h1>
+    </header>
+
+    <main class="gui-main">
+      <section class="status-bar">
+        <div class="status-item">
+          <div class="status-label">Modus</div>
+          <div id="status-mode" class="status-value">—</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Bachlauf</div>
+          <div id="status-bachlauf" class="status-value">—</div>
+        </div>
+      </section>
+
+      <section class="controls">
+        <div class="control-group">
+          <h2>Licht und Ton</h2>
+          <div class="btn-row" role="group" aria-label="LED Steuerung">
+            <button id="led-on" class="btn">DAUER</button>
+            <button id="led-off" class="btn">AUS</button>
+            <button id="led-auto" class="btn">AUTOMATISCH</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h2>Bachlauf</h2>
+          <div class="btn-row" role="group" aria-label="Bachlauf Steuerung">
+            <button id="bach-on" class="btn">AN</button>
+            <button id="bach-off" class="btn">AUS</button>
+            <button id="bach-auto" class="btn">AUTOMATISCH</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="gui-log" class="gui-log" aria-live="polite"></div>
+    </main>
+
+    <script src="/js/gui.js" defer></script>
+  </body>
+</html>
